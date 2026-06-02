@@ -55,3 +55,73 @@ export const ALBUM_STATS = {
 
 // The four cromos highlighted on the dashboard ("Tus Cromos Destacados").
 export const dashboardFeatured = FEATURED_STICKERS.slice(0, 4)
+
+// ===== Full 994-card album =====
+// Generated deterministically: the 30 featured cromos keep their data, the rest
+// are filler cards. Status counts are forced to match ALBUM_STATS exactly so the
+// grid filters line up with the dashboard numbers.
+const TEAMS = [
+  'ARG', 'BRA', 'FRA', 'ESP', 'ENG', 'POR', 'GER', 'NED',
+  'BEL', 'CRO', 'URU', 'MEX', 'USA', 'ITA', 'COL', 'JPN',
+]
+const SURNAMES = [
+  'González', 'Rodríguez', 'Fernández', 'Silva', 'Costa', 'Müller', 'Smith', 'Rossi',
+  'Dubois', 'Kovač', 'Pérez', 'Santos', 'Nakamura', 'Okafor', 'Jansen', 'Ferrari',
+  'Hansen', 'Torres', 'Romero', 'Bianchi', 'Walker', 'Schmidt', 'Moreno', 'Ibáñez',
+]
+const POSITIONS = ['Portero', 'Defensa', 'Mediocampista', 'Delantero']
+
+// Small seedable PRNG so the album is identical on every render.
+function mulberry32(seed) {
+  return function () {
+    seed |= 0
+    seed = (seed + 0x6d2b79f5) | 0
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function buildAlbum() {
+  const featuredByNumber = new Map(FEATURED_STICKERS.map((s) => [s.number, s]))
+  const countFeatured = (status) => FEATURED_STICKERS.filter((s) => s.status === status).length
+
+  // Status pool for the filler cards: exact remaining counts after the featured ones.
+  const pool = [
+    ...Array(ALBUM_STATS.tengo - countFeatured('tengo')).fill('tengo'),
+    ...Array(ALBUM_STATS.repetido - countFeatured('repetido')).fill('repetido'),
+    ...Array(ALBUM_STATS.falta - countFeatured('falta')).fill('falta'),
+  ]
+
+  const rng = mulberry32(2026)
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1))
+    ;[pool[i], pool[j]] = [pool[j], pool[i]]
+  }
+
+  const perTeam = Math.ceil(ALBUM_STATS.total / TEAMS.length)
+  const stickers = []
+  let poolIdx = 0
+
+  for (let n = 1; n <= ALBUM_STATS.total; n++) {
+    const featured = featuredByNumber.get(n)
+    if (featured) {
+      stickers.push({ id: n, ...featured })
+      continue
+    }
+    stickers.push({
+      id: n,
+      number: n,
+      name: SURNAMES[n % SURNAMES.length],
+      team: TEAMS[Math.min(Math.floor((n - 1) / perTeam), TEAMS.length - 1)],
+      position: POSITIONS[n % POSITIONS.length],
+      status: pool[poolIdx++] ?? 'falta',
+      rarity: rng() < 0.06 ? 'gold' : 'base',
+    })
+  }
+
+  return stickers
+}
+
+// The complete 994-card album. Real app: GET /api/album.
+export const STICKERS = buildAlbum()
