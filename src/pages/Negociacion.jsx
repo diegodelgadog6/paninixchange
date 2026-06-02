@@ -1,8 +1,208 @@
-import PagePlaceholder from '../components/PagePlaceholder'
+import { useMemo, useState } from 'react'
+import Icon from '../components/Icon'
+import BalanzaIndicator from '../components/BalanzaIndicator'
+import ConfirmTradeModal from '../components/ConfirmTradeModal'
+import ContactUnlockedModal from '../components/ContactUnlockedModal'
+import { negotiation, computeBalance } from '../data/negotiation'
 
-// Negotiation table. Two-column trade UI + balanza arrive in feat/negotiation-table.
+// A single cromo inside an offer column (with a remove control).
+function OfferCard({ sticker, onRemove }) {
+  const isSpecial = sticker.rarity === 'gold' || sticker.rarity === 'legend'
+  return (
+    <div className="group relative rounded border border-outline-variant/20 bg-surface-container-lowest p-3 shadow-sm transition-shadow hover:shadow-md">
+      <div className="mb-2 flex items-start justify-between">
+        <span
+          className={`rounded px-2 py-0.5 text-label-sm font-bold ${
+            isSpecial ? 'bg-secondary-container text-on-secondary-container' : 'bg-surface-container-high text-on-surface-variant'
+          }`}
+        >
+          {sticker.team} {sticker.number}
+        </span>
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label={`Quitar ${sticker.name}`}
+          className="text-on-surface-variant transition-colors hover:text-error"
+        >
+          <Icon name="close" className="!text-[18px]" />
+        </button>
+      </div>
+      <div
+        className={`mb-2 flex aspect-[3/4] items-center justify-center overflow-hidden rounded-sm border border-outline-variant/10 bg-gradient-to-br ${
+          isSpecial ? 'from-secondary-fixed-dim to-secondary-container' : 'from-primary-container to-primary'
+        }`}
+      >
+        <Icon name="person" fill className={`!text-[40px] ${isSpecial ? 'text-primary/40' : 'text-white/40'}`} />
+      </div>
+      <p className="truncate text-center text-label-md text-on-surface">{sticker.name}</p>
+      <p className="mt-1 text-center text-label-sm text-on-surface-variant">{sticker.tier}</p>
+    </div>
+  )
+}
+
+function AddSlot() {
+  return (
+    <button
+      type="button"
+      className="flex min-h-[120px] flex-col items-center justify-center gap-2 rounded border border-dashed border-outline-variant/40 text-outline transition-colors hover:bg-surface-container-low"
+    >
+      <Icon name="add_circle" />
+      <span className="text-label-sm">Añadir otro</span>
+    </button>
+  )
+}
+
+function OfferColumn({ title, subtitle, stickers, onRemove, tone = 'default' }) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-headline-md text-primary">{title}</h2>
+        <div className="flex items-center gap-2">
+          {subtitle && <span className="text-label-sm text-on-surface-variant">{subtitle}</span>}
+          <span className="rounded bg-surface-container-high px-2 py-1 text-label-sm">
+            {stickers.length} {stickers.length === 1 ? 'Cromo' : 'Cromos'}
+          </span>
+        </div>
+      </div>
+      <div
+        className={`grid min-h-[450px] grid-cols-2 content-start gap-4 rounded-xl border-2 border-dashed border-outline-variant/30 p-3 ${
+          tone === 'muted' ? 'bg-surface-container-low/40' : ''
+        }`}
+      >
+        {stickers.map((sticker) => (
+          <OfferCard key={sticker.id} sticker={sticker} onRemove={() => onRemove(sticker.id)} />
+        ))}
+        <AddSlot />
+      </div>
+    </div>
+  )
+}
+
+function InfoCard({ icon, title, children }) {
+  return (
+    <div className="rounded-xl border border-outline-variant/10 bg-surface-container-lowest p-4">
+      <div className="mb-2 flex items-center gap-2">
+        <Icon name={icon} className="!text-[20px] text-primary" />
+        <p className="text-label-md font-bold text-primary">{title}</p>
+      </div>
+      <p className="text-label-sm text-on-surface-variant">{children}</p>
+    </div>
+  )
+}
+
 function Negociacion() {
-  return <PagePlaceholder title="Mesa de Negociación" icon="swap_horiz" />
+  const { partner, expiresIn } = negotiation
+  const [youOffer, setYouOffer] = useState(negotiation.youOffer)
+  const [theyOffer, setTheyOffer] = useState(negotiation.theyOffer)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [contactOpen, setContactOpen] = useState(false)
+
+  const balance = useMemo(() => computeBalance(youOffer, theyOffer), [youOffer, theyOffer])
+  const canConfirm = youOffer.length > 0 && theyOffer.length > 0
+
+  const removeFrom = (setter) => (id) => setter((list) => list.filter((s) => s.id !== id))
+
+  const handleConfirm = () => {
+    setConfirmOpen(false)
+    setContactOpen(true)
+  }
+
+  return (
+    <div className="pb-32">
+      {/* Header */}
+      <header className="sticky top-0 z-30 flex h-20 items-center justify-between border-b border-outline-variant/10 bg-surface/95 px-12 backdrop-blur-md">
+        <h1 className="text-headline-md font-bold text-primary">Mesa de Negociación</h1>
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 text-on-surface-variant">
+            <Icon name="timer" className="!text-[20px]" />
+            <span className="text-label-md">La oferta expira en {expiresIn}</span>
+          </div>
+          <button
+            type="button"
+            className="rounded-lg bg-primary-container px-6 py-2 text-label-md text-white transition-opacity hover:opacity-90"
+          >
+            Conservar
+          </button>
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-[1280px] p-12">
+        <div className="grid grid-cols-12 items-stretch gap-6">
+          {/* Tú ofreces */}
+          <div className="col-span-12 lg:col-span-5">
+            <OfferColumn title="Tú ofreces" stickers={youOffer} onRemove={removeFrom(setYouOffer)} />
+          </div>
+
+          {/* Balanza */}
+          <div className="relative col-span-12 flex flex-col items-center justify-center py-8 lg:col-span-2">
+            <div className="absolute hidden h-full w-px bg-outline-variant/20 lg:block" />
+            <BalanzaIndicator balance={balance} />
+          </div>
+
+          {/* Ellos ofrecen */}
+          <div className="col-span-12 lg:col-span-5">
+            <OfferColumn
+              title="Ellos ofrecen"
+              subtitle={partner.username}
+              stickers={theyOffer}
+              onRemove={removeFrom(setTheyOffer)}
+              tone="muted"
+            />
+          </div>
+        </div>
+
+        {/* Info row */}
+        <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+          <InfoCard icon="history" title="Historial Reciente">
+            {partner.username} completó 38 intercambios con 0 incidencias.
+          </InfoCard>
+          <InfoCard icon="edit_note" title="Notas de Trading">
+            Prefiere encuentros en zonas públicas y horario diurno.
+          </InfoCard>
+          <InfoCard icon="verified_user" title="Intercambio Protegido">
+            El contacto solo se revela tras confirmar ambas partes.
+          </InfoCard>
+        </div>
+      </div>
+
+      {/* Fixed action bar */}
+      <div className="fixed bottom-0 left-64 right-0 z-30 flex items-center justify-between border-t border-outline-variant/10 bg-surface/95 px-12 py-4 backdrop-blur-md">
+        <div className="flex items-center gap-2 text-on-surface-variant">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-secondary" />
+          <span className="text-label-md">Esperando tu confirmación</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            className="rounded-lg border border-outline-variant/40 px-6 py-3 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirmOpen(true)}
+            disabled={!canConfirm}
+            className="flex items-center gap-2 rounded-lg bg-secondary-container px-12 py-3 text-label-md font-bold text-on-secondary-container shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Icon name="handshake" className="!text-[20px]" />
+            Confirmar intercambio
+          </button>
+        </div>
+      </div>
+
+      {/* Modals */}
+      <ConfirmTradeModal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleConfirm}
+        youCount={youOffer.length}
+        theyCount={theyOffer.length}
+        partner={partner}
+        balance={balance}
+      />
+      <ContactUnlockedModal open={contactOpen} onClose={() => setContactOpen(false)} partner={partner} />
+    </div>
+  )
 }
 
 export default Negociacion
