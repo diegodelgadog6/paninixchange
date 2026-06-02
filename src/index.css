@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+/*
+ * PaniniXchange design tokens — "Smart Tradition".
+ * Values come straight from the Stitch mockup (DESIGN.md). Defining them here as
+ * Tailwind v4 theme variables exposes them as utilities: bg-primary, text-secondary-container,
+ * font-display, text-display-lg, etc. The UI uses ONLY these tokens.
+ */
+@theme {
+  /* ===== Color: Primary (Pitch Green) ===== */
+  --color-primary: #00241a;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #0d3b2e;
+  --color-on-primary-container: #79a694;
+  --color-primary-fixed: #beedd9;
+  --color-primary-fixed-dim: #a3d0be;
+  --color-inverse-primary: #a3d0be;
+
+  /* ===== Color: Secondary (Golden Accent) ===== */
+  --color-secondary: #745b00;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #fdcc22;
+  --color-on-secondary-container: #6e5700;
+  --color-secondary-fixed: #ffe08b;
+  --color-secondary-fixed-dim: #f0c110;
+
+  /* ===== Color: Tertiary / Alert (Deep Red) ===== */
+  --color-tertiary: #470000;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #6f0000;
+  --color-on-tertiary-container: #ff6e5a;
+
+  /* ===== Color: Error ===== */
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  /* ===== Color: Surfaces (Cream) ===== */
+  --color-surface: #fef9f1;
+  --color-surface-dim: #ded9d2;
+  --color-surface-bright: #fef9f1;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f8f3eb;
+  --color-surface-container: #f2ede5;
+  --color-surface-container-high: #ece8e0;
+  --color-surface-container-highest: #e7e2da;
+  --color-surface-variant: #e7e2da;
+
+  --color-on-surface: #1d1c17;
+  --color-on-surface-variant: #414845;
+  --color-inverse-surface: #32302b;
+  --color-inverse-on-surface: #f5f0e8;
+
+  --color-outline: #717974;
+  --color-outline-variant: #c0c8c3;
+
+  --color-background: #fef9f1;
+  --color-on-background: #1d1c17;
+
+  /* ===== Typography ===== */
+  --font-display: "Literata", Georgia, "Times New Roman", serif;
+  --font-body: "Hanken Grotesk", system-ui, -apple-system, sans-serif;
+
+  --text-display-lg: 48px;
+  --text-display-lg--line-height: 56px;
+  --text-display-lg--font-weight: 700;
+  --text-display-lg--letter-spacing: -0.02em;
+
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 40px;
+  --text-headline-lg--font-weight: 600;
+
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 32px;
+  --text-headline-md--font-weight: 600;
+
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 28px;
+
+  --text-body-md: 16px;
+  --text-body-md--line-height: 24px;
+
+  --text-label-md: 14px;
+  --text-label-md--line-height: 20px;
+  --text-label-md--font-weight: 600;
+  --text-label-md--letter-spacing: 0.01em;
+
+  --text-label-sm: 12px;
+  --text-label-sm--line-height: 16px;
+  --text-label-sm--font-weight: 500;
+  --text-label-sm--letter-spacing: 0.04em;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-body);
+    background-color: var(--color-surface);
+    color: var(--color-on-surface);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+  }
+
+  /* Material Symbols default weight/optical settings */
+  .material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+    line-height: 1;
+    user-select: none;
+  }
+}
