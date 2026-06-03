@@ -4,13 +4,16 @@ import StatCard from '../components/StatCard'
 import StickerCard from '../components/StickerCard'
 import MatchSuggestionCard from '../components/MatchSuggestionCard'
 import { currentUser } from '../data/users'
-import { ALBUM_STATS, dashboardFeatured } from '../data/stickers'
+import { FEATURED_IDS } from '../data/stickers'
 import { matchSuggestions } from '../data/matches'
+import { useCollection } from '../context/CollectionContext'
 
 // Collector hub. Lives inside AppLayout (sidebar + ml-64 main).
 function Dashboard() {
+  const { stickers, stats } = useCollection()
   const firstName = currentUser.name.split(' ')[0]
-  const progress = Math.round((ALBUM_STATS.owned / ALBUM_STATS.total) * 100)
+  const progress = Math.round((stats.owned / stats.total) * 100)
+  const featured = FEATURED_IDS.map((id) => stickers.find((s) => s.id === id)).filter(Boolean)
 
   return (
     <div className="p-12">
@@ -27,7 +30,7 @@ function Dashboard() {
             <div className="mb-2 flex items-center justify-between">
               <span className="text-label-md text-primary">Progreso del Álbum</span>
               <span className="text-label-md text-primary">
-                {ALBUM_STATS.owned}/{ALBUM_STATS.total} ({progress}%)
+                {stats.owned}/{stats.total} ({progress}%)
               </span>
             </div>
             <div className="h-4 w-full overflow-hidden rounded-full border border-outline-variant/10 bg-surface-container">
@@ -43,9 +46,9 @@ function Dashboard() {
           {/* Center column */}
           <div className="col-span-12 space-y-6 lg:col-span-8">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              <StatCard tone="primary" icon="content_copy" value={ALBUM_STATS.repetido} label="Cromos Repetidos" chip="Inventario" />
-              <StatCard tone="tertiary" icon="bookmark_add" value={ALBUM_STATS.falta} label="Cromos Faltantes" chip="Faltantes" />
-              <StatCard tone="secondary" icon="handshake" value={ALBUM_STATS.matches} label="Matches Disponibles" chip="Activo" />
+              <StatCard tone="primary" icon="content_copy" value={stats.repetido} label="Cromos Repetidos" chip="Inventario" />
+              <StatCard tone="tertiary" icon="bookmark_add" value={stats.falta} label="Cromos Faltantes" chip="Faltantes" />
+              <StatCard tone="secondary" icon="handshake" value={stats.matches} label="Matches Disponibles" chip="Activo" />
             </div>
 
             {/* Featured cromos */}
@@ -57,8 +60,8 @@ function Dashboard() {
                 </Link>
               </div>
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                {dashboardFeatured.map((sticker) => (
-                  <StickerCard key={sticker.number} sticker={sticker} />
+                {featured.map((sticker) => (
+                  <StickerCard key={sticker.id} sticker={sticker} />
                 ))}
               </div>
             </section>

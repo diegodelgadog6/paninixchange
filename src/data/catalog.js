@@ -43,6 +43,10 @@ export const ALBUM_SECTIONS = [
   ...BLOCK2_CODES.map((c) => ({ section: c, count: 20 })),
 ]
 
+// Sections grouped together as "Especiales" in the album filter (not national teams):
+// 00 (album logo), FWC (tournament/history) and CC (Coca-Cola collectors).
+export const SPECIAL_SECTIONS = ['00', 'FWC', 'CC']
+
 // ── Tier helpers ─────────────────────────────────────────────────────────────
 // Tiers: ESP (especiales 00/FWC), CC (Coca-Cola), ESC (escudo), EQP (team photo), JUG (jugador)
 
