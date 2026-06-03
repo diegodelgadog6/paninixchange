@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import Icon from '../components/Icon'
 import StatCard from '../components/StatCard'
@@ -5,7 +6,7 @@ import StickerCard from '../components/StickerCard'
 import MatchSuggestionCard from '../components/MatchSuggestionCard'
 import { currentUser } from '../data/users'
 import { FEATURED_IDS } from '../data/stickers'
-import { matchSuggestions } from '../data/matches'
+import { computeMatchSuggestions } from '../data/matches'
 import { useCollection } from '../context/CollectionContext'
 
 // Collector hub. Lives inside AppLayout (sidebar + ml-64 main).
@@ -14,6 +15,9 @@ function Dashboard() {
   const firstName = currentUser.name.split(' ')[0]
   const progress = Math.round((stats.owned / stats.total) * 100)
   const featured = FEATURED_IDS.map((id) => stickers.find((s) => s.id === id)).filter(Boolean)
+
+  // Live match suggestions derived from the current collection (recompute on edits).
+  const matches = useMemo(() => computeMatchSuggestions(stickers), [stickers])
 
   return (
     <div className="p-12">
@@ -48,7 +52,7 @@ function Dashboard() {
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <StatCard tone="primary" icon="content_copy" value={stats.repetido} label="Cromos Repetidos" chip="Inventario" />
               <StatCard tone="tertiary" icon="bookmark_add" value={stats.falta} label="Cromos Faltantes" chip="Faltantes" />
-              <StatCard tone="secondary" icon="handshake" value={stats.matches} label="Matches Disponibles" chip="Activo" />
+              <StatCard tone="secondary" icon="handshake" value={matches.length} label="Matches Disponibles" chip="Activo" />
             </div>
 
             {/* Featured cromos */}
@@ -76,9 +80,15 @@ function Dashboard() {
               </div>
 
               <div className="space-y-4">
-                {matchSuggestions.map((match) => (
-                  <MatchSuggestionCard key={match.id} match={match} />
-                ))}
+                {matches.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-outline-variant/40 px-4 py-6 text-center text-label-sm text-on-surface-variant">
+                    Sin matches por ahora. Marca tus repetidos y faltantes en el álbum para encontrar intercambios.
+                  </p>
+                ) : (
+                  matches.slice(0, 3).map((match) => (
+                    <MatchSuggestionCard key={match.collector.id} match={match} />
+                  ))
+                )}
               </div>
 
               {/* Premium promo */}
