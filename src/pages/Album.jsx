@@ -64,7 +64,6 @@ function Album() {
   }, [stickers, filter, team, search])
 
   const progress = Math.round((stats.owned / stats.total) * 100)
-  const tableRows = filtered.slice(0, 10)
 
   return (
     <div>
@@ -163,38 +162,40 @@ function Album() {
         )}
 
         {/* Inventory detail table (zebra striped) */}
-        {tableRows.length > 0 && (
+        {filtered.length > 0 && (
           <section className="mt-12 overflow-hidden rounded-xl border border-outline-variant/10 bg-surface-container-lowest">
             <div className="flex items-center justify-between border-b border-outline-variant/10 px-6 py-4">
               <h3 className="text-headline-md text-primary">Estadísticas de Inventario</h3>
               <span className="text-label-sm text-on-surface-variant">
-                Primeros {tableRows.length} de {filtered.length.toLocaleString('es')}
+                {filtered.length.toLocaleString('es')} cromos
               </span>
             </div>
-            <table className="w-full text-left">
-              <thead>
-                <tr className="text-label-sm uppercase tracking-wide text-on-surface-variant">
-                  <th className="px-6 py-3 font-semibold">Cromo</th>
-                  <th className="px-6 py-3 font-semibold">Jugador</th>
-                  <th className="px-6 py-3 font-semibold">Equipo</th>
-                  <th className="px-6 py-3 font-semibold">Posición</th>
-                  <th className="px-6 py-3 font-semibold">Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tableRows.map((s, i) => (
-                  <tr key={s.id} className={i % 2 === 1 ? 'bg-primary/5' : ''}>
-                    <td className="px-6 py-3 font-bold text-primary">{s.id}</td>
-                    <td className="px-6 py-3 text-on-surface">{s.name}</td>
-                    <td className="px-6 py-3 text-on-surface-variant">{s.team}</td>
-                    <td className="px-6 py-3 text-on-surface-variant">{s.position}</td>
-                    <td className="px-6 py-3">
-                      <StatusPill status={s.status} />
-                    </td>
+            <div className="max-h-120 overflow-y-auto">
+              <table className="w-full text-left">
+                <thead className="sticky top-0 bg-surface-container-lowest">
+                  <tr className="text-label-sm uppercase tracking-wide text-on-surface-variant">
+                    <th className="px-6 py-3 font-semibold">Cromo</th>
+                    <th className="px-6 py-3 font-semibold">Jugador</th>
+                    <th className="px-6 py-3 font-semibold">Equipo</th>
+                    <th className="px-6 py-3 font-semibold">Posición</th>
+                    <th className="px-6 py-3 font-semibold">Estado</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filtered.map((s, i) => (
+                    <tr key={s.id} className={i % 2 === 1 ? 'bg-primary/5' : ''}>
+                      <td className="px-6 py-3 font-bold text-primary">{s.id}</td>
+                      <td className="px-6 py-3 text-on-surface">{s.name}</td>
+                      <td className="px-6 py-3 text-on-surface-variant">{s.team}</td>
+                      <td className="px-6 py-3 text-on-surface-variant">{s.position}</td>
+                      <td className="px-6 py-3">
+                        <StatusPill status={s.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </section>
         )}
       </div>
