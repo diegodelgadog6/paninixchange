@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import Icon from '../components/Icon'
 import StatCard from '../components/StatCard'
 import StickerCard from '../components/StickerCard'
+import Spinner from '../components/Spinner'
 import MatchSuggestionCard from '../components/MatchSuggestionCard'
 import { FEATURED_IDS } from '../data/stickers'
 import { useAuth } from '../context/AuthContext'
@@ -11,13 +12,15 @@ import { useMatches } from '../hooks/useMatches'
 // Collector hub. Lives inside AppLayout (sidebar + ml-64 main).
 function Dashboard() {
   const { user } = useAuth()
-  const { stickers, stats } = useCollection()
+  const { stickers, stats, loading } = useCollection()
   const firstName = user.name.split(' ')[0]
-  const progress = Math.round((stats.owned / stats.total) * 100)
+  const progress = stats.total ? Math.round((stats.owned / stats.total) * 100) : 0
   const featured = FEATURED_IDS.map((id) => stickers.find((s) => s.id === id)).filter(Boolean)
 
   // Live match suggestions derived from the current collection (recompute on edits).
   const matches = useMatches()
+
+  if (loading) return <Spinner />
 
   return (
     <div className="p-12">

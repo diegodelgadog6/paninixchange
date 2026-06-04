@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Spinner from './Spinner'
 
 // Gate for the authenticated app shell. While the token is being validated against
 // the backend we hold on a spinner; with no token we bounce to /login, remembering
@@ -9,15 +10,7 @@ function ProtectedRoute() {
   const location = useLocation()
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-surface-container-low">
-        <div
-          className="h-10 w-10 animate-spin rounded-full border-4 border-primary/20 border-t-primary"
-          role="status"
-          aria-label="Cargando"
-        />
-      </div>
-    )
+    return <Spinner />
   }
 
   if (!isAuthenticated) {

@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import Icon from '../components/Icon'
 import StickerCard from '../components/StickerCard'
+import Spinner from '../components/Spinner'
 import { useCollection } from '../context/CollectionContext'
 import { COUNTRY_NAMES, SPECIAL_SECTIONS } from '../data/catalog'
 
@@ -42,7 +43,7 @@ function StatusPill({ status }) {
 }
 
 function Album() {
-  const { stickers, stats, addCopy, removeCopy } = useCollection()
+  const { stickers, stats, loading, addCopy, removeCopy } = useCollection()
   const [filter, setFilter] = useState('todos')
   const [team, setTeam] = useState('todas')
   const [search, setSearch] = useState('')
@@ -64,7 +65,9 @@ function Album() {
     })
   }, [stickers, filter, team, search])
 
-  const progress = Math.round((stats.owned / stats.total) * 100)
+  const progress = stats.total ? Math.round((stats.owned / stats.total) * 100) : 0
+
+  if (loading) return <Spinner />
 
   return (
     <div>
