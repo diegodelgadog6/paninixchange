@@ -8,7 +8,7 @@
 
 import { nearbyUsers } from './users'
 import { STICKERS } from './stickers'
-import { mulberry32, hashStringSeed } from './prng'
+import { mulberry32, hashStringSeed } from '../utils/prng'
 
 // Builds a stable per-collector collection: ~45% missing, ~40% single, ~15% duplicates.
 // Seeded by the collector id so it never changes across reloads.
