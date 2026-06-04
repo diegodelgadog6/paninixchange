@@ -11,7 +11,7 @@
 // `position`: category label — 'Jugador' | 'Escudo' | 'Foto del equipo' | 'Especial' | 'Coca-Cola'
 
 import { STICKER_NAMES, ALBUM_SECTIONS, getTier, getRarity, getCategory } from './catalog'
-import { mulberry32 } from './prng'
+import { mulberry32 } from '../utils/prng'
 
 // Derives the collector's relationship to a cromo from its copy count.
 // Single source of the copies → status mapping (consumed by the context and StickerCard).
