@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { useMatches } from './useMatches'
+import { useEffect, useMemo, useState } from 'react'
+import { useRadarMatches } from '../context/RadarContext'
 
 // Manages the full Trade Radar state: location search config persisted to localStorage,
 // setup modal visibility, delete confirmation, and live-filtered match list.
@@ -21,10 +21,16 @@ function loadSearch() {
 //   Manual path: map loads centered on the Americas, user drags pin to desired spot.
 
 export function useRadar() {
-  const allMatches = useMatches()
+  const { matches: allMatches, loading, refresh } = useRadarMatches()
   const [search, setSearch] = useState(loadSearch)   // { city, radius } | null
   const [showSetup, setShowSetup] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+
+  // Re-fetch on entry so suggestions reflect any album edits made since last visit
+  // (the engine is server-side; the provider only fetched once on shell mount).
+  useEffect(() => {
+    refresh()
+  }, [refresh])
 
   const hasLocation = search !== null
 
@@ -53,6 +59,7 @@ export function useRadar() {
   return {
     search,
     hasLocation,
+    loading,
     allMatches,
     visible,
     showSetup,

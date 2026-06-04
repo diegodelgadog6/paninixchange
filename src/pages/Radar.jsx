@@ -7,6 +7,7 @@ function Radar() {
   const {
     search,
     hasLocation,
+    loading,
     allMatches,
     visible,
     showSetup,
@@ -173,9 +174,11 @@ function Radar() {
           <div className="border-b border-outline-variant/10 p-4">
             <h2 className="text-headline-md text-primary">Coleccionistas Cercanos</h2>
             <p className="text-label-sm text-on-surface-variant">
-              {hasLocation
-                ? `${visible.length} coleccionistas compatibles en ${search.radius} km`
-                : 'Configura tu ubicación para comenzar'}
+              {!hasLocation
+                ? 'Configura tu ubicación para comenzar'
+                : loading
+                  ? 'Buscando coleccionistas cercanos…'
+                  : `${visible.length} coleccionistas compatibles en ${search.radius} km`}
             </p>
           </div>
 
@@ -185,6 +188,17 @@ function Radar() {
                 <Icon name="lock" className="!text-[40px] text-outline-variant" />
                 <p className="text-label-sm text-on-surface-variant">
                   Agrega tu ubicación para descubrir coleccionistas cercanos con cromos que te interesan.
+                </p>
+              </div>
+            ) : loading ? (
+              <div className="flex h-full flex-col items-center justify-center gap-3 py-8 text-center">
+                <span
+                  className="h-8 w-8 animate-spin rounded-full border-4 border-primary/20 border-t-primary"
+                  role="status"
+                  aria-label="Buscando coleccionistas"
+                />
+                <p className="text-label-sm text-on-surface-variant">
+                  Cruzando tu colección con los coleccionistas cercanos…
                 </p>
               </div>
             ) : visible.length === 0 ? (

@@ -62,3 +62,8 @@ export const fetchAlbum = (token) => apiFetch('/api/cards/album', { token })
 // (0 = missing) for one card in the authenticated user's collection.
 export const updateCardCopies = (token, code, copies) =>
   apiFetch(`/api/cards/album/${code}`, { method: 'PATCH', token, body: { copies } })
+
+// GET /api/radar/matches → [MatchRead] (requires a valid token). Ranked trade
+// suggestions crossing the user's collection against nearby collectors, computed
+// server-side (the matching engine no longer runs in the browser).
+export const fetchMatches = (token) => apiFetch('/api/radar/matches', { token })
