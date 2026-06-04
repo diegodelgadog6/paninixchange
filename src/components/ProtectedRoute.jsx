@@ -1,0 +1,30 @@
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+
+// Gate for the authenticated app shell. While the token is being validated against
+// the backend we hold on a spinner; with no token we bounce to /login, remembering
+// where the user was headed so login can send them back.
+function ProtectedRoute() {
+  const { isAuthenticated, loading } = useAuth()
+  const location = useLocation()
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-surface-container-low">
+        <div
+          className="h-10 w-10 animate-spin rounded-full border-4 border-primary/20 border-t-primary"
+          role="status"
+          aria-label="Cargando"
+        />
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace state={{ from: location }} />
+  }
+
+  return <Outlet />
+}
+
+export default ProtectedRoute

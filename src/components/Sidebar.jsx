@@ -1,7 +1,7 @@
-import { NavLink, Link } from 'react-router-dom'
+import { NavLink, Link, useNavigate } from 'react-router-dom'
 import Icon from './Icon'
 import Logo from './Logo'
-import { currentUser } from '../data/users'
+import { useAuth } from '../context/AuthContext'
 
 // Primary navigation for the logged-in app shell. Active route is highlighted
 // in golden accent, matching the Stitch dashboard/radar mockups.
@@ -14,6 +14,14 @@ const NAV_ITEMS = [
 ]
 
 function Sidebar() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const onLogout = () => {
+    logout()
+    navigate('/', { replace: true })
+  }
+
   return (
     <aside className="fixed top-0 left-0 z-40 h-screen w-64 bg-primary text-on-primary flex flex-col">
       {/* Brand */}
@@ -27,12 +35,12 @@ function Sidebar() {
         className="mx-4 mb-4 flex items-center gap-3 rounded-lg px-3 py-3 hover:bg-white/5 transition-colors"
       >
         <img
-          src={currentUser.avatar}
-          alt={currentUser.name}
+          src={user.avatar}
+          alt={user.name}
           className="h-9 w-9 rounded-full border-2 border-secondary-container object-cover"
         />
         <div className="leading-tight">
-          <p className="text-label-md text-secondary-container">{currentUser.membership}</p>
+          <p className="text-label-md text-secondary-container">{user.membership}</p>
           <p className="text-label-sm text-on-primary-container">Collector Profile</p>
         </div>
       </Link>
@@ -68,10 +76,11 @@ function Sidebar() {
         </Link>
         <button
           type="button"
+          onClick={onLogout}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-label-md text-primary-fixed-dim hover:bg-white/5 hover:text-white transition-colors"
         >
-          <Icon name="settings" className="!text-[20px]" />
-          Settings
+          <Icon name="logout" className="!text-[20px]" />
+          Cerrar sesión
         </button>
         <button
           type="button"

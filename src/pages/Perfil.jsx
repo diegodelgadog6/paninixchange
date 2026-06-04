@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Icon from '../components/Icon'
 import StarRating from '../components/StarRating'
 import RatingModal from '../components/RatingModal'
-import { profile } from '../data/profile'
+import { buildProfile } from '../data/profile'
+import { useAuth } from '../context/AuthContext'
 
 const STAT_TONES = {
   solid: 'bg-primary text-white',
@@ -36,7 +37,9 @@ function Badge({ badge }) {
 }
 
 function Perfil() {
+  const { user } = useAuth()
   const [rateOpen, setRateOpen] = useState(false)
+  const profile = useMemo(() => buildProfile(user), [user])
   const lastPartner = profile.tradeHistory[0]?.partner ?? 'el coleccionista'
 
   return (

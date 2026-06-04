@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import Logo from './Logo'
 
 // Public top navigation shell, used on the landing and premium pages.
-// There is no auth, so "Sign In" / "Register" simply enter the app at /dashboard.
 function TopNav() {
   const linkClass = 'text-on-surface-variant hover:text-primary transition-colors text-label-md'
 
@@ -20,16 +19,16 @@ function TopNav() {
 
       <div className="flex items-center gap-4">
         <Link
-          to="/dashboard"
+          to="/login"
           className="px-6 py-2 text-primary text-label-md rounded hover:bg-primary/5 transition-all active:scale-[0.98]"
         >
-          Sign In
+          Iniciar sesión
         </Link>
         <Link
-          to="/dashboard"
+          to="/register"
           className="px-6 py-2 bg-primary text-on-primary rounded text-label-md hover:bg-primary/90 transition-all active:scale-[0.98]"
         >
-          Register
+          Crear cuenta
         </Link>
       </div>
     </header>
