@@ -141,6 +141,24 @@
   background-size: 24px 24px;
 }
 
+/* Rotating sweep that keeps the coverage circle feeling "alive". A conic sector in
+   pitch-green (token) spins inside the circle; the parent must clip with overflow-hidden
+   and rounded-full. Pin/pulses stay on top of it. */
+.radar-sweep {
+  background: conic-gradient(
+    from 0deg,
+    color-mix(in srgb, var(--color-primary) 22%, transparent),
+    transparent 45%
+  );
+  animation: radar-sweep 4s linear infinite;
+}
+
+@keyframes radar-sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }

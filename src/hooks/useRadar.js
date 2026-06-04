@@ -1,14 +1,66 @@
-import { useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useMatches } from './useMatches'
 
-export function useRadar(initialRadius = 5.2) {
-  const [radius, setRadius] = useState(initialRadius)
+// Manages the full Trade Radar state: location search config persisted to localStorage,
+// setup modal visibility, delete confirmation, and live-filtered match list.
+// Real app: search.city/radius would come from a user profile setting via PATCH /api/me.
 
-  // TODO: Google Maps integration
-  // const mapRef = useRef(null)
-  // useEffect(() => {
-  //   mapRef.current = new google.maps.Map(element, { center, zoom })
-  //   return () => mapRef.current = null
-  // }, [])
+const STORAGE_KEY = 'pxc:radar-search'
 
-  return { radius, setRadius }
+function loadSearch() {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+// TODO: Google Maps integration — replace city text input with a navigable map.
+//   GPS path: navigator.geolocation.getCurrentPosition() pre-fills the map pin.
+//   Manual path: map loads centered on the Americas, user drags pin to desired spot.
+
+export function useRadar() {
+  const allMatches = useMatches()
+  const [search, setSearch] = useState(loadSearch)   // { city, radius } | null
+  const [showSetup, setShowSetup] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const hasLocation = search !== null
+
+  const visible = useMemo(
+    () => (search ? allMatches.filter((m) => m.collector.distanceKm <= search.radius) : []),
+    [allMatches, search],
+  )
+
+  function confirmSearch(newSearch) {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(newSearch))
+    setSearch(newSearch)
+    setShowSetup(false)
+  }
+
+  function deleteSearch() {
+    window.localStorage.removeItem(STORAGE_KEY)
+    setSearch(null)
+    setConfirmDelete(false)
+  }
+
+  function openSetup() {
+    setConfirmDelete(false)
+    setShowSetup(true)
+  }
+
+  return {
+    search,
+    hasLocation,
+    allMatches,
+    visible,
+    showSetup,
+    confirmDelete,
+    setShowSetup,
+    setConfirmDelete,
+    confirmSearch,
+    deleteSearch,
+    openSetup,
+  }
 }
