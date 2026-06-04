@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import Icon from '../components/Icon'
 import StickerCard from '../components/StickerCard'
 import { useCollection } from '../context/CollectionContext'
@@ -46,6 +46,8 @@ function Album() {
   const [filter, setFilter] = useState('todos')
   const [team, setTeam] = useState('todas')
   const [search, setSearch] = useState('')
+  const tableRef = useRef(null)
+  const [tableVisible, setTableVisible] = useState(false)
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -114,11 +116,26 @@ function Album() {
             ))}
           </select>
         </div>
-        <div className="ml-6 flex flex-col items-end">
+        <div className="ml-6 flex flex-col items-end gap-1">
           <span className="text-label-md font-bold text-primary">
             {stats.owned} / {stats.total}
           </span>
           <span className="text-label-sm text-on-surface-variant">{progress}% Completo</span>
+          <button
+            type="button"
+            onClick={() => {
+              if (!tableVisible) {
+                setTableVisible(true)
+                tableRef.current?.scrollIntoView({ behavior: 'smooth' })
+              } else {
+                setTableVisible(false)
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+              }
+            }}
+            className="rounded border border-outline-variant/40 px-2 py-0.5 text-label-sm text-on-surface-variant transition-colors hover:bg-surface-container"
+          >
+            {tableVisible ? 'Ver álbum ↑' : 'Ver tabla ↓'}
+          </button>
         </div>
       </header>
 
@@ -163,7 +180,7 @@ function Album() {
 
         {/* Inventory detail table (zebra striped) */}
         {filtered.length > 0 && (
-          <section className="mt-12 overflow-hidden rounded-xl border border-outline-variant/10 bg-surface-container-lowest">
+          <section ref={tableRef} className="mt-12 overflow-hidden rounded-xl border border-outline-variant/10 bg-surface-container-lowest">
             <div className="flex items-center justify-between border-b border-outline-variant/10 px-6 py-4">
               <h3 className="text-headline-md text-primary">Estadísticas de Inventario</h3>
               <span className="text-label-sm text-on-surface-variant">
