@@ -6,6 +6,7 @@ import AppLayout from './components/AppLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 import { AuthProvider } from './context/AuthContext'
 import { CollectionProvider } from './context/CollectionContext'
+import { RadarProvider } from './context/RadarContext'
 import Landing from './pages/Landing'
 import Premium from './pages/Premium'
 import Login from './pages/Login'
@@ -32,7 +33,9 @@ createRoot(document.getElementById('root')).render(
             <Route
               element={
                 <CollectionProvider>
-                  <AppLayout />
+                  <RadarProvider>
+                    <AppLayout />
+                  </RadarProvider>
                 </CollectionProvider>
               }
             >

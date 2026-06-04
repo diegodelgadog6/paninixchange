@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from database import init_db, seed_cards
+from database import init_db, seed_cards, seed_demo_collectors
 from routers import auth, users, cards, trades, radar
 
 
@@ -9,6 +9,7 @@ from routers import auth, users, cards, trades, radar
 async def lifespan(app: FastAPI):
     await init_db()
     await seed_cards()
+    await seed_demo_collectors()
     yield
 
 

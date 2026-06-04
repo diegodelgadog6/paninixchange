@@ -7,7 +7,7 @@ import MatchSuggestionCard from '../components/MatchSuggestionCard'
 import { FEATURED_IDS } from '../data/stickers'
 import { useAuth } from '../context/AuthContext'
 import { useCollection } from '../context/CollectionContext'
-import { useMatches } from '../hooks/useMatches'
+import { useRadarMatches } from '../context/RadarContext'
 
 // Collector hub. Lives inside AppLayout (sidebar + ml-64 main).
 function Dashboard() {
@@ -17,8 +17,8 @@ function Dashboard() {
   const progress = stats.total ? Math.round((stats.owned / stats.total) * 100) : 0
   const featured = FEATURED_IDS.map((id) => stickers.find((s) => s.id === id)).filter(Boolean)
 
-  // Live match suggestions derived from the current collection (recompute on edits).
-  const matches = useMatches()
+  // Match suggestions from the server-side engine (GET /api/radar/matches).
+  const { matches, loading: matchesLoading } = useRadarMatches()
 
   if (loading) return <Spinner />
 
@@ -83,7 +83,11 @@ function Dashboard() {
               </div>
 
               <div className="space-y-4">
-                {matches.length === 0 ? (
+                {matchesLoading ? (
+                  <p className="rounded-lg border border-dashed border-outline-variant/40 px-4 py-6 text-center text-label-sm text-on-surface-variant">
+                    Buscando matches cercanos…
+                  </p>
+                ) : matches.length === 0 ? (
                   <p className="rounded-lg border border-dashed border-outline-variant/40 px-4 py-6 text-center text-label-sm text-on-surface-variant">
                     Sin matches por ahora. Marca tus repetidos y faltantes en el álbum para encontrar intercambios.
                   </p>
