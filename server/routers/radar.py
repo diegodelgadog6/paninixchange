@@ -68,6 +68,8 @@ def _compute_match(
             username=collector.username,
             name=demo_meta["name"],
             distance_km=demo_meta["distance_km"],
+            rating=demo_meta["rating"],
+            successful_trades=demo_meta["successful_trades"],
             demo=True,
         ),
         they_offer=they_offer,

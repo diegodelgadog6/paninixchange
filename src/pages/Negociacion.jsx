@@ -121,6 +121,8 @@ function Negociacion() {
     theyOffer,
     confirmOpen,
     contactOpen,
+    confirming,
+    confirmError,
     balance,
     canConfirm,
     removeFromYou,
@@ -197,8 +199,9 @@ function Negociacion() {
         {/* Info row */}
         <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
           <InfoCard icon="history" title="Historial Reciente">
-            {partner.username} completó 38 intercambios con 0 incidencias.
+            {partner.username} completó {partner.successfulTrades} intercambios con 0 incidencias.
           </InfoCard>
+          {/* Generic safety tip — not user data, shown for every trade. */}
           <InfoCard icon="edit_note" title="Notas de Trading">
             Prefiere encuentros en zonas públicas y horario diurno.
           </InfoCard>
@@ -243,6 +246,8 @@ function Negociacion() {
         theyCount={theyOffer.length}
         partner={partner}
         balance={balance}
+        confirming={confirming}
+        error={confirmError}
       />
       <ContactUnlockedModal open={contactOpen} onClose={() => setContactOpen(false)} partner={partner} />
     </div>

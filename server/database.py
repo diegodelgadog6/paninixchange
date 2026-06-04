@@ -66,6 +66,7 @@ async def seed_demo_collectors():
             user = User(
                 username=demo["username"],
                 email=demo_email(demo["username"]),
+                phone=demo["phone"],
                 hashed_password=hash_password(secrets.token_urlsafe(16)),
             )
             session.add(user)

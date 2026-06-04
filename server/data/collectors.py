@@ -10,22 +10,35 @@ import random
 
 
 # Each demo collector becomes a real User row (+ a seeded UserCard inventory).
-# `username` is the public handle the radar shows; `distance_km` mirrors the old mock.
+# `username` is the public handle the radar shows. Demo-only display data lives here
+# (the source of truth, not the User model nor a computed value), same convention as
+# `distance_km`:
+#   - distance_km        — radar distance (real user-to-user distance needs geolocation).
+#   - phone              — revealed on the negotiation table only after a trade is
+#                          confirmed (ContactUnlockedModal); WhatsApp link uses its digits.
+#   - rating             — the collector's reputation shown on the radar/negotiation
+#                          (real reputation aggregation arrives with the reviews backend).
+#   - successful_trades  — completed-trade count shown next to the rating.
 DEMO_COLLECTORS = [
-    {"username": "Goles2026", "name": "Goles 2026", "distance_km": 1.2},
-    {"username": "AlbumMaster", "name": "Album Master", "distance_km": 3.5},
-    {"username": "StickerHunter", "name": "Sticker Hunter", "distance_km": 5.1},
-    {"username": "MundialFan26", "name": "Mundial Fan", "distance_km": 0.8},
-    {"username": "CromoKing", "name": "Cromo King", "distance_km": 6.7},
-    {"username": "LaAlbiceleste", "name": "La Albiceleste", "distance_km": 2.3},
-    {"username": "PaniniPro", "name": "Panini Pro", "distance_km": 8.9},
-    {"username": "CanjeMX", "name": "Canje MX", "distance_km": 4.4},
+    {"username": "Goles2026", "name": "Goles 2026", "distance_km": 1.2, "phone": "+52 55 1234 5678", "rating": 4.9, "successful_trades": 38},
+    {"username": "AlbumMaster", "name": "Album Master", "distance_km": 3.5, "phone": "+52 55 2345 6789", "rating": 4.7, "successful_trades": 52},
+    {"username": "StickerHunter", "name": "Sticker Hunter", "distance_km": 5.1, "phone": "+52 55 3456 7890", "rating": 4.8, "successful_trades": 27},
+    {"username": "MundialFan26", "name": "Mundial Fan", "distance_km": 0.8, "phone": "+52 55 4567 8901", "rating": 5.0, "successful_trades": 64},
+    {"username": "CromoKing", "name": "Cromo King", "distance_km": 6.7, "phone": "+52 55 5678 9012", "rating": 4.6, "successful_trades": 19},
+    {"username": "LaAlbiceleste", "name": "La Albiceleste", "distance_km": 2.3, "phone": "+52 55 6789 0123", "rating": 4.9, "successful_trades": 45},
+    {"username": "PaniniPro", "name": "Panini Pro", "distance_km": 8.9, "phone": "+52 55 7890 1234", "rating": 4.5, "successful_trades": 73},
+    {"username": "CanjeMX", "name": "Canje MX", "distance_km": 4.4, "phone": "+52 55 8901 2345", "rating": 4.8, "successful_trades": 31},
 ]
 
 
 def demo_email(username: str) -> str:
     """Stable, non-routable email for a seeded demo account."""
     return f"{username.lower()}@demo.paninixchange.app"
+
+
+def whatsapp_digits(phone: str) -> str:
+    """Digits-only form of a phone number, for building a wa.me link."""
+    return "".join(ch for ch in phone if ch.isdigit())
 
 
 def build_demo_copies(seed_key: str, cards) -> dict[int, int]:

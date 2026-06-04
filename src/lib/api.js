@@ -73,3 +73,18 @@ export const fetchMatches = (token) => apiFetch('/api/radar/matches', { token })
 // table. 404 when the collector isn't tradeable or no mutually beneficial trade exists.
 export const fetchMatch = (token, collectorId) =>
   apiFetch(`/api/radar/matches/${collectorId}`, { token })
+
+// POST /api/trades → TradeRead (requires a valid token). Persists a proposed swap from
+// the negotiation table. `iOffer`/`theyOffer` are arrays of album codes (e.g. "MEX2").
+export const createTrade = (token, { receiverId, iOffer, theyOffer }) =>
+  apiFetch('/api/trades/', {
+    method: 'POST',
+    token,
+    body: { receiver_id: receiverId, i_offer: iOffer, they_offer: theyOffer },
+  })
+
+// PATCH /api/trades/:id/confirm → ContactRead (requires a valid token). Seals the trade
+// and reveals the partner's contact ({ name, phone, whatsapp, rating }) — by design the
+// contact is only available after confirming.
+export const confirmTrade = (token, tradeId) =>
+  apiFetch(`/api/trades/${tradeId}/confirm`, { method: 'PATCH', token })

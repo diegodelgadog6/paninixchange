@@ -66,6 +66,8 @@ class MatchCollector(BaseModel):
     username: str
     name: str
     distance_km: float
+    rating: float           # reputation shown on the radar/negotiation (demo metadata)
+    successful_trades: int  # completed-trade count shown next to the rating
     demo: bool
 
 
@@ -76,3 +78,29 @@ class MatchRead(BaseModel):
     i_offer: list[MatchSticker]     # cards they're missing that I have spare
     gold_count: int                 # non-base cards in they_offer
     compatibility: int              # 0–100; higher = more balanced, higher-volume
+
+
+class TradeCreate(BaseModel):
+    """A proposed swap submitted from the negotiation table. Card lists are album
+    codes (e.g. MEX2); the server resolves them to ids and records who offers what."""
+    receiver_id: int
+    i_offer: list[str]    # cards I give (offered_by = me)
+    they_offer: list[str]  # cards they give (offered_by = receiver)
+
+
+class TradeRead(BaseModel):
+    """A persisted trade proposal."""
+    id: int
+    status: str
+    created_at: datetime
+    expires_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}
+
+
+class ContactRead(BaseModel):
+    """Partner contact revealed once a trade is confirmed (privacy by design)."""
+    name: str
+    phone: str
+    whatsapp: str  # digits only, for the wa.me link
+    rating: float
