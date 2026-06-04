@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { fetchMatch } from '../lib/api'
-import { toNegotiation } from '../data/negotiation'
+import { confirmTrade, createTrade, fetchMatch } from '../lib/api'
+import { toContact, toNegotiation } from '../data/negotiation'
 
 const STICKER_VALUE = { legend: 5, gold: 4, base: 2 }
 
@@ -37,6 +37,8 @@ export function useNegotiation(collectorId) {
   const [error, setError] = useState(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [contactOpen, setContactOpen] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const [confirmError, setConfirmError] = useState(null)
 
   useEffect(() => {
     if (!token || !collectorId) return undefined
@@ -74,9 +76,27 @@ export function useNegotiation(collectorId) {
   const removeFromYou = (id) => setYouOffer((list) => list.filter((s) => s.id !== id))
   const removeFromThem = (id) => setTheyOffer((list) => list.filter((s) => s.id !== id))
 
-  const handleConfirm = () => {
-    setConfirmOpen(false)
-    setContactOpen(true)
+  // Persist the proposed swap, seal it, and reveal the partner's real contact.
+  // Sends the offered cards by their album codes (the offer-card ids).
+  const handleConfirm = async () => {
+    if (confirming) return
+    setConfirming(true)
+    setConfirmError(null)
+    try {
+      const trade = await createTrade(token, {
+        receiverId: collectorId,
+        iOffer: youOffer.map((s) => s.id),
+        theyOffer: theyOffer.map((s) => s.id),
+      })
+      const contact = await confirmTrade(token, trade.id)
+      setPartner((p) => ({ ...p, ...toContact(contact) }))
+      setConfirmOpen(false)
+      setContactOpen(true)
+    } catch (err) {
+      setConfirmError(err.message)
+    } finally {
+      setConfirming(false)
+    }
   }
 
   return {
@@ -88,6 +108,8 @@ export function useNegotiation(collectorId) {
     theyOffer,
     confirmOpen,
     contactOpen,
+    confirming,
+    confirmError,
     balance,
     canConfirm,
     removeFromYou,

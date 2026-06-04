@@ -10,4 +10,5 @@ class User(SQLModel, table=True):
     hashed_password: str
     membership: str = Field(default="free")  # free | pro | legend
     location: Optional[str] = None
+    phone: Optional[str] = None  # revealed to a trade partner only after both confirm
     created_at: datetime = Field(default_factory=datetime.utcnow)

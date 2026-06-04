@@ -2,8 +2,18 @@ import Modal from './Modal'
 import Icon from './Icon'
 
 // Confirmation step before sealing a trade. Confirming triggers onConfirm, which
-// the page uses to reveal the partner's contact (ContactUnlockedModal).
-function ConfirmTradeModal({ open, onClose, onConfirm, youCount, theyCount, partner, balance }) {
+// persists the trade and reveals the partner's contact (ContactUnlockedModal).
+function ConfirmTradeModal({
+  open,
+  onClose,
+  onConfirm,
+  youCount,
+  theyCount,
+  partner,
+  balance,
+  confirming = false,
+  error = null,
+}) {
   return (
     <Modal open={open} onClose={onClose} title="Confirmar intercambio">
       <p className="text-body-md text-on-surface-variant">
@@ -26,21 +36,30 @@ function ConfirmTradeModal({ open, onClose, onConfirm, youCount, theyCount, part
         </p>
       </div>
 
+      {error && (
+        <div className="mt-3 flex items-start gap-2 rounded-lg border border-error/40 bg-error/10 p-3">
+          <Icon name="error" className="!text-[20px] shrink-0 text-error" />
+          <p className="text-label-sm text-error">{error}</p>
+        </div>
+      )}
+
       <div className="mt-6 flex gap-3">
         <button
           type="button"
           onClick={onClose}
-          className="flex-1 rounded-lg border border-outline-variant/40 py-2.5 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container"
+          disabled={confirming}
+          className="flex-1 rounded-lg border border-outline-variant/40 py-2.5 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-50"
         >
           Cancelar
         </button>
         <button
           type="button"
           onClick={onConfirm}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-secondary-container py-2.5 text-label-md font-bold text-on-secondary-container shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
+          disabled={confirming}
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-secondary-container py-2.5 text-label-md font-bold text-on-secondary-container shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <Icon name="check" className="!text-[20px]" />
-          Confirmar
+          <Icon name={confirming ? 'progress_activity' : 'check'} className={`!text-[20px] ${confirming ? 'animate-spin' : ''}`} />
+          {confirming ? 'Confirmando…' : 'Confirmar'}
         </button>
       </div>
     </Modal>
