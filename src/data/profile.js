@@ -2,39 +2,60 @@
 // Identity (name, avatar, location, memberSince) comes from the live auth user
 // (GET /api/users/me, via useAuth). The collection stat tiles are computed live from
 // the real collection (GET /api/cards/album, via useCollection) by buildCollectionStats.
-//
-// Reputation below (rating, reviews, successfulTrades, level, badges, tradeHistory)
-// has NO backend yet — there's no completed-trade or rating data to aggregate — so it
-// stays a clearly-marked placeholder until a reputation endpoint exists.
-export const buildProfile = (user) => ({
+// Reputation comes from GET /api/users/me/reputation (aggregated from real trades and
+// reviews). These adapters keep the UI's expected shape — only the source is the API.
+const MONTHS_ES = [
+  'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+  'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
+]
+
+// "12 Nov 2025" from an ISO timestamp; empty string if unparseable.
+function formatHistoryDate(iso) {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return `${d.getDate()} ${MONTHS_ES[d.getMonth()]} ${d.getFullYear()}`
+}
+
+// Merges the live identity (from useAuth) with the reputation aggregate (from
+// fetchReputation) into the shape the Perfil page consumes.
+export const buildProfile = (user, reputation) => ({
   name: user.name,
   avatar: user.avatar,
   location: user.location,
   memberSince: user.memberSince,
 
-  // --- PLACEHOLDER reputation (no backend yet) ---
-  rating: 4.8,
-  reviews: 42,
-  successfulTrades: 124,
-  level: 'Diamante',
+  rating: reputation.rating,
+  reviews: reputation.reviews,
+  successfulTrades: reputation.successful_trades,
+  level: reputation.level,
+  points: reputation.points,
 
-  badges: [
-    { id: 'b1', icon: 'verified', title: 'Intercambiador confiable', desc: 'Sin incidencias en 50+ envíos.' },
-    { id: 'b2', icon: 'military_tech', title: 'Veterano del álbum', desc: 'Coleccionista activo por 5 años.' },
-    { id: 'b3', icon: 'workspace_premium', title: 'Completista', desc: '3 álbumes mundiales al 100%.' },
-  ],
+  // Backend badges already carry { id, icon, title, desc }.
+  badges: reputation.badges,
 
-  tradeHistory: [
-    { id: 'h1', date: '12 Nov 2025', partner: 'Roberto M.', cromos: '1 (FIFA 2026)', rating: 5 },
-    { id: 'h2', date: '08 Nov 2025', partner: 'Elena L.', cromos: '5 (Champions League)', rating: 4 },
-    { id: 'h3', date: '02 Nov 2025', partner: 'Juan C.', cromos: '24 (Copa Oro)', rating: 5 },
-    { id: 'h4', date: '28 Oct 2025', partner: 'Sofía R.', cromos: '3 (Mundial 2026)', rating: 5 },
-    { id: 'h5', date: '21 Oct 2025', partner: 'Andrés P.', cromos: '7 (Eurocopa)', rating: 4 },
-  ],
+  tradeHistory: reputation.history.map((h) => ({
+    id: h.id,
+    date: formatHistoryDate(h.date),
+    partner: h.partner,
+    cromos: `${h.cromo_count} ${h.cromo_count === 1 ? 'cromo' : 'cromos'}`,
+    rating: h.my_rating, // null until the user rates this trade
+    status: h.status,
+  })),
 })
 
 const fmt = (n) => n.toLocaleString('es-MX')
 const cardCode = (n) => `#${String(n).padStart(3, '0')}`
+
+// The "Puntos de Honor" stat tile, now fed by real reputation (points + level).
+export function buildPointsTile(reputation) {
+  return {
+    id: 's4',
+    label: 'Puntos de Honor',
+    value: fmt(reputation.points),
+    sub: `Nivel: ${reputation.level}`,
+    tone: 'gold',
+  }
+}
 
 // The four headline stat tiles, computed live from the user's real collection.
 // `collection` is the value returned by useCollection() ({ stickers, stats }).
@@ -76,7 +97,6 @@ export function buildCollectionStats({ stickers, stats }) {
       sub: `${fmt(stats.owned)}/${fmt(stats.total)} cromos`,
       tone: 'default',
     },
-    // PLACEHOLDER — Honor points need the reputation backend (see buildProfile).
-    { id: 's4', label: 'Puntos de Honor', value: '8,450', sub: 'Nivel: Diamante', tone: 'gold' },
+    // The 4th tile (Puntos de Honor) is built from reputation via buildPointsTile.
   ]
 }

@@ -3,25 +3,39 @@ import Modal from './Modal'
 import StarRating from './StarRating'
 import Icon from './Icon'
 
-// Mutual rating after a completed trade. UI only — onSubmit would POST the review.
+// Mutual rating after a completed trade. `onSubmit({ rating, comment })` performs the
+// POST /api/reviews (provided by the parent) and may be async; the modal shows a
+// submitting state and surfaces any error.
 function RatingModal({ open, onClose, partner = 'el coleccionista', onSubmit }) {
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
   const [done, setDone] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState(null)
 
   const reset = () => {
     setRating(0)
     setComment('')
     setDone(false)
+    setSubmitting(false)
+    setError(null)
   }
   const handleClose = () => {
     onClose?.()
     reset()
   }
-  const handleSubmit = () => {
-    // Real app: POST /api/reviews { partner, rating, comment }
-    onSubmit?.({ rating, comment })
-    setDone(true)
+  const handleSubmit = async () => {
+    if (submitting) return
+    setSubmitting(true)
+    setError(null)
+    try {
+      await onSubmit?.({ rating, comment })
+      setDone(true)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -59,6 +73,8 @@ function RatingModal({ open, onClose, partner = 'el coleccionista', onSubmit }) 
             className="w-full resize-none rounded-lg border border-outline-variant bg-surface-container-low p-3 text-body-md focus:border-primary-container focus:outline-none"
           />
 
+          {error && <p className="mt-3 text-label-sm text-error">{error}</p>}
+
           <div className="mt-5 flex gap-3">
             <button
               type="button"
@@ -70,10 +86,10 @@ function RatingModal({ open, onClose, partner = 'el coleccionista', onSubmit }) 
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={rating === 0}
+              disabled={rating === 0 || submitting}
               className="flex-1 rounded-lg bg-secondary-container py-2.5 text-label-md font-bold text-on-secondary-container shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Enviar reseña
+              {submitting ? 'Enviando…' : 'Enviar reseña'}
             </button>
           </div>
         </>
