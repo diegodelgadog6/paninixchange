@@ -67,3 +67,9 @@ export const updateCardCopies = (token, code, copies) =>
 // suggestions crossing the user's collection against nearby collectors, computed
 // server-side (the matching engine no longer runs in the browser).
 export const fetchMatches = (token) => apiFetch('/api/radar/matches', { token })
+
+// GET /api/radar/matches/:collectorId → MatchRead (requires a valid token). The single
+// trade suggestion against one collector — the proposed swap that fills the negotiation
+// table. 404 when the collector isn't tradeable or no mutually beneficial trade exists.
+export const fetchMatch = (token, collectorId) =>
+  apiFetch(`/api/radar/matches/${collectorId}`, { token })

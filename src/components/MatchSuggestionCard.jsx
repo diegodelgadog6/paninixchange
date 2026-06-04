@@ -34,7 +34,7 @@ function MatchSuggestionCard({ match }) {
       )}
 
       <Link
-        to="/negociacion"
+        to={`/negociacion/${collector.id}`}
         className="mt-1 block rounded bg-primary py-2 text-center text-label-md text-white transition-all hover:bg-primary-container"
       >
         Ver intercambio

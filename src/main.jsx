@@ -43,6 +43,7 @@ createRoot(document.getElementById('root')).render(
               <Route path="/album" element={<Album />} />
               <Route path="/radar" element={<Radar />} />
               <Route path="/negociacion" element={<Negociacion />} />
+              <Route path="/negociacion/:collectorId" element={<Negociacion />} />
               <Route path="/perfil" element={<Perfil />} />
             </Route>
           </Route>

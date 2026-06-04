@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
 import Icon from '../components/Icon'
+import Spinner from '../components/Spinner'
 import StarRating from '../components/StarRating'
 import RatingModal from '../components/RatingModal'
-import { buildProfile } from '../data/profile'
+import { buildProfile, buildCollectionStats } from '../data/profile'
 import { useAuth } from '../context/AuthContext'
+import { useCollection } from '../context/CollectionContext'
 
 const STAT_TONES = {
   solid: 'bg-primary text-white',
@@ -38,9 +40,13 @@ function Badge({ badge }) {
 
 function Perfil() {
   const { user } = useAuth()
+  const collection = useCollection()
   const [rateOpen, setRateOpen] = useState(false)
   const profile = useMemo(() => buildProfile(user), [user])
+  const stats = useMemo(() => buildCollectionStats(collection), [collection])
   const lastPartner = profile.tradeHistory[0]?.partner ?? 'el coleccionista'
+
+  if (collection.loading) return <Spinner />
 
   return (
     <div className="p-12">
@@ -151,7 +157,7 @@ function Perfil() {
 
         {/* Stat tiles */}
         <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {profile.stats.map((stat) => (
+          {stats.map((stat) => (
             <ProfileStat key={stat.id} stat={stat} />
           ))}
         </div>
