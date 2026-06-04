@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import init_db, seed_cards, seed_demo_collectors
-from routers import auth, users, cards, trades, radar
+from routers import auth, users, cards, trades, radar, reviews
 
 
 @asynccontextmanager
@@ -29,3 +29,4 @@ app.include_router(users.router)
 app.include_router(cards.router)
 app.include_router(trades.router)
 app.include_router(radar.router)
+app.include_router(reviews.router)

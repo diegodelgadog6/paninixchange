@@ -8,9 +8,11 @@ from database import get_session
 from deps import get_current_user
 from data.collectors import DEMO_COLLECTORS, whatsapp_digits
 from models.card import Card
+from models.review import Review
 from models.trade import Trade, TradeItem
 from models.user import User
-from schemas import ContactRead, TradeCreate, TradeRead
+from reputation import build_history
+from schemas import ContactRead, TradeCreate, TradeHistoryRead, TradeRead
 
 router = APIRouter(prefix="/api/trades", tags=["trades"])
 
@@ -36,10 +38,14 @@ async def _resolve_card_ids(session: AsyncSession, codes: list[str]) -> list[int
     return [card.id for card in rows]
 
 
-@router.get("/")
-async def list_trades(session: AsyncSession = Depends(get_session)):
-    # TODO: list active trades for the authenticated user (reputation backend / PR-2)
-    return {"message": "GET /api/trades — not yet implemented"}
+@router.get("/", response_model=list[TradeHistoryRead])
+async def list_trades(
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """The authenticated user's trade history, newest first — partner, cromo count,
+    status and the rating they left for each trade."""
+    return await build_history(session, user.id)
 
 
 @router.post("/", response_model=TradeRead)
@@ -115,8 +121,27 @@ async def confirm_trade(
     if receiver is None or demo_meta is None:
         raise HTTPException(status_code=404, detail="Coleccionista no encontrado.")
 
+    was_pending = trade.status == "pending"
     trade.status = "confirmed"
     session.add(trade)
+
+    # Auto-review: the demo collector rates the user, seeding their reputation with
+    # the collector's demo rating. Only on the pending→confirmed transition, and never
+    # twice for the same trade (re-confirming is idempotent).
+    if was_pending:
+        existing = (await session.execute(
+            select(Review).where(
+                Review.trade_id == trade.id, Review.rater_id == receiver.id
+            )
+        )).scalars().first()
+        if existing is None:
+            session.add(Review(
+                trade_id=trade.id,
+                rater_id=receiver.id,
+                ratee_id=user.id,
+                rating=round(demo_meta["rating"]),
+            ))
+
     await session.commit()
 
     return ContactRead(

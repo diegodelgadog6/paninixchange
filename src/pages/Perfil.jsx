@@ -3,9 +3,11 @@ import Icon from '../components/Icon'
 import Spinner from '../components/Spinner'
 import StarRating from '../components/StarRating'
 import RatingModal from '../components/RatingModal'
-import { buildProfile, buildCollectionStats } from '../data/profile'
+import { buildProfile, buildCollectionStats, buildPointsTile } from '../data/profile'
+import { createReview } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import { useCollection } from '../context/CollectionContext'
+import { useReputation } from '../hooks/useReputation'
 
 const STAT_TONES = {
   solid: 'bg-primary text-white',
@@ -39,14 +41,45 @@ function Badge({ badge }) {
 }
 
 function Perfil() {
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const collection = useCollection()
+  const { reputation, loading: repLoading, error: repError, refresh } = useReputation()
   const [rateOpen, setRateOpen] = useState(false)
-  const profile = useMemo(() => buildProfile(user), [user])
-  const stats = useMemo(() => buildCollectionStats(collection), [collection])
-  const lastPartner = profile.tradeHistory[0]?.partner ?? 'el coleccionista'
 
-  if (collection.loading) return <Spinner />
+  const profile = useMemo(
+    () => (reputation ? buildProfile(user, reputation) : null),
+    [user, reputation],
+  )
+  const stats = useMemo(
+    () =>
+      reputation
+        ? [...buildCollectionStats(collection), buildPointsTile(reputation)]
+        : [],
+    [collection, reputation],
+  )
+
+  // The most recent confirmed trade is the one "Calificar reciente" rates.
+  const recentTrade = useMemo(
+    () => profile?.tradeHistory.find((t) => t.status === 'confirmed') ?? null,
+    [profile],
+  )
+
+  const submitReview = async ({ rating, comment }) => {
+    await createReview(token, { tradeId: recentTrade.id, rating, comment })
+    refresh()
+  }
+
+  if (collection.loading || repLoading) return <Spinner />
+
+  if (repError || !profile) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-6 text-center">
+        <Icon name="error" className="!text-[48px] text-outline-variant" />
+        <h2 className="text-headline-md text-primary">No se pudo cargar tu reputación</h2>
+        <p className="max-w-sm text-body-md text-on-surface-variant">{repError}</p>
+      </div>
+    )
+  }
 
   return (
     <div className="p-12">
@@ -108,11 +141,17 @@ function Perfil() {
           <section className="col-span-12 lg:col-span-4">
             <div className="rounded-xl border border-outline-variant/10 bg-white p-6 shadow-sm">
               <h2 className="mb-4 text-headline-md text-primary">Insignias</h2>
-              <div className="space-y-3">
-                {profile.badges.map((badge) => (
-                  <Badge key={badge.id} badge={badge} />
-                ))}
-              </div>
+              {profile.badges.length ? (
+                <div className="space-y-3">
+                  {profile.badges.map((badge) => (
+                    <Badge key={badge.id} badge={badge} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-body-md text-on-surface-variant">
+                  Completa intercambios para ganar tus primeras insignias.
+                </p>
+              )}
             </div>
           </section>
 
@@ -120,37 +159,49 @@ function Perfil() {
             <div className="rounded-xl border border-outline-variant/10 bg-white p-6 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-headline-md text-primary">Historial de Intercambios</h2>
-                <button
-                  type="button"
-                  onClick={() => setRateOpen(true)}
-                  className="flex items-center gap-1 text-label-md text-primary hover:underline"
-                >
-                  <Icon name="rate_review" className="!text-[18px]" />
-                  Calificar reciente
-                </button>
+                {recentTrade && (
+                  <button
+                    type="button"
+                    onClick={() => setRateOpen(true)}
+                    className="flex items-center gap-1 text-label-md text-primary hover:underline"
+                  >
+                    <Icon name="rate_review" className="!text-[18px]" />
+                    Calificar reciente
+                  </button>
+                )}
               </div>
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="text-label-sm uppercase tracking-wide text-on-surface-variant">
-                    <th className="py-2 font-semibold">Fecha</th>
-                    <th className="py-2 font-semibold">Socio</th>
-                    <th className="py-2 font-semibold">Cromos</th>
-                    <th className="py-2 font-semibold">Calificación</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {profile.tradeHistory.map((row, i) => (
-                    <tr key={row.id} className={`border-t border-outline-variant/10 ${i % 2 === 1 ? 'bg-primary/5' : ''}`}>
-                      <td className="py-3 text-label-md text-on-surface-variant">{row.date}</td>
-                      <td className="py-3 text-label-md font-bold text-primary">{row.partner}</td>
-                      <td className="py-3 text-label-md text-on-surface">{row.cromos}</td>
-                      <td className="py-3">
-                        <StarRating value={row.rating} starClass="!text-[14px]" />
-                      </td>
+              {profile.tradeHistory.length ? (
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="text-label-sm uppercase tracking-wide text-on-surface-variant">
+                      <th className="py-2 font-semibold">Fecha</th>
+                      <th className="py-2 font-semibold">Socio</th>
+                      <th className="py-2 font-semibold">Cromos</th>
+                      <th className="py-2 font-semibold">Calificación</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {profile.tradeHistory.map((row, i) => (
+                      <tr key={row.id} className={`border-t border-outline-variant/10 ${i % 2 === 1 ? 'bg-primary/5' : ''}`}>
+                        <td className="py-3 text-label-md text-on-surface-variant">{row.date}</td>
+                        <td className="py-3 text-label-md font-bold text-primary">{row.partner}</td>
+                        <td className="py-3 text-label-md text-on-surface">{row.cromos}</td>
+                        <td className="py-3">
+                          {row.rating ? (
+                            <StarRating value={row.rating} starClass="!text-[14px]" />
+                          ) : (
+                            <span className="text-label-sm text-on-surface-variant">Sin calificar</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="py-6 text-center text-body-md text-on-surface-variant">
+                  Aún no tienes intercambios. Encuentra un trato en el Radar.
+                </p>
+              )}
             </div>
           </section>
         </div>
@@ -163,7 +214,12 @@ function Perfil() {
         </div>
       </div>
 
-      <RatingModal open={rateOpen} onClose={() => setRateOpen(false)} partner={lastPartner} />
+      <RatingModal
+        open={rateOpen}
+        onClose={() => setRateOpen(false)}
+        partner={recentTrade?.partner ?? 'el coleccionista'}
+        onSubmit={submitReview}
+      />
     </div>
   )
 }

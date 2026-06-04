@@ -54,6 +54,11 @@ export const loginUser = ({ email, password }) =>
 // GET /api/users/me → UserRead (requires a valid token).
 export const fetchMe = (token) => apiFetch('/api/users/me', { token })
 
+// GET /api/users/me/reputation → ReputationRead (requires a valid token). Aggregated
+// reputation (rating, reviews, successful_trades, points, level, badges, history),
+// all derived from the user's real trades and reviews.
+export const fetchReputation = (token) => apiFetch('/api/users/me/reputation', { token })
+
 // GET /api/cards/album → [CardRead] (requires a valid token).
 // Full 994-card album in physical order, with the user's copy count per card.
 export const fetchAlbum = (token) => apiFetch('/api/cards/album', { token })
@@ -88,3 +93,16 @@ export const createTrade = (token, { receiverId, iOffer, theyOffer }) =>
 // contact is only available after confirming.
 export const confirmTrade = (token, tradeId) =>
   apiFetch(`/api/trades/${tradeId}/confirm`, { method: 'PATCH', token })
+
+// GET /api/trades → [TradeHistoryRead] (requires a valid token). The user's trade
+// history (partner, cromo count, status, the rating they left for each).
+export const fetchTrades = (token) => apiFetch('/api/trades/', { token })
+
+// POST /api/reviews → ReviewRead (requires a valid token). Rates a confirmed trade
+// (user → collector); re-rating the same trade updates the existing review.
+export const createReview = (token, { tradeId, rating, comment }) =>
+  apiFetch('/api/reviews/', {
+    method: 'POST',
+    token,
+    body: { trade_id: tradeId, rating, comment: comment || null },
+  })

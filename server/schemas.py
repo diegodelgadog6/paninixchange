@@ -104,3 +104,51 @@ class ContactRead(BaseModel):
     phone: str
     whatsapp: str  # digits only, for the wa.me link
     rating: float
+
+
+class ReviewCreate(BaseModel):
+    """A rating the user leaves on a confirmed trade (user → collector)."""
+    trade_id: int
+    rating: int = Field(ge=1, le=5)
+    comment: Optional[str] = None
+
+
+class ReviewRead(BaseModel):
+    """A persisted review."""
+    id: int
+    trade_id: int
+    rating: int
+    comment: Optional[str] = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class TradeHistoryRead(BaseModel):
+    """One row of the user's trade history (Perfil's "Historial de Intercambios")."""
+    id: int
+    date: datetime          # trade.created_at
+    partner: str            # the other collector's display name
+    cromo_count: int        # number of cards in the swap (both sides)
+    status: str             # pending | confirmed | cancelled
+    my_rating: Optional[int] = None  # the rating the user left, if any
+
+
+class BadgeRead(BaseModel):
+    """A reputation badge earned by meeting a rule (see build_reputation)."""
+    id: str
+    icon: str
+    title: str
+    desc: str
+
+
+class ReputationRead(BaseModel):
+    """Aggregated reputation for the authenticated user, derived from real trades
+    and reviews. Feeds the Perfil header, stat tiles, badges, and history."""
+    rating: float           # avg of reviews where the user is the ratee (0 if none)
+    reviews: int            # number of those reviews
+    successful_trades: int  # confirmed trades the user took part in
+    points: int             # derived honor points
+    level: str              # derived level label
+    badges: list[BadgeRead]
+    history: list[TradeHistoryRead]
