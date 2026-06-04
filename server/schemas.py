@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserCreate(BaseModel):
@@ -30,3 +30,21 @@ class UserRead(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class CardRead(BaseModel):
+    """A single album card plus the authenticated user's owned copy count."""
+    code: str
+    number: int
+    name: str
+    team: str
+    category: str
+    rarity: str
+    copies: int = 0
+
+    model_config = {"from_attributes": True}
+
+
+class CardUpdate(BaseModel):
+    """Absolute copy count for a card in the user's collection (0 = missing)."""
+    copies: int = Field(ge=0)

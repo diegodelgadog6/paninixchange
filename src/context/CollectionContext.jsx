@@ -1,63 +1,57 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { STICKERS, ALBUM_STATS, statusFromCopies } from '../data/stickers'
+import { statusFromCopies, ALBUM_STATS } from '../data/stickers'
+import { useAuth } from './AuthContext'
+import { fetchAlbum, updateCardCopies } from '../lib/api'
 
 // Global, editable collection state for the authenticated shell.
-// Source of truth is `copiesById` ({ [id]: copies }), persisted to localStorage.
-// The full sticker list and headline stats are derived live from it.
-// Real app: this state hydrates from GET /api/album and writes back via PATCH /api/album.
-
-const STORAGE_KEY = 'pxc:collection'
+// Hydrates from GET /api/cards/album and writes back via PATCH /api/cards/album/:code.
+// Each sticker carries its owned `copies`; `status` is derived via statusFromCopies().
 
 const CollectionContext = createContext(null)
 
-// Seeds the copies map from the bundled catalog (deterministic mock distribution).
-function seedCopiesById() {
-  const seed = {}
-  for (const s of STICKERS) seed[s.id] = s.copies
-  return seed
-}
-
-// Reads the persisted copies map, merging defensively over the catalog seed so that
-// cromos absent from storage fall back to their base copies (resilient to catalog changes).
-function loadCopiesById() {
-  const seed = seedCopiesById()
-  if (typeof window === 'undefined') return seed
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (!raw) return seed
-    const stored = JSON.parse(raw)
-    for (const id of Object.keys(seed)) {
-      if (typeof stored[id] === 'number' && stored[id] >= 0) seed[id] = stored[id]
-    }
-  } catch {
-    // Corrupt/blocked storage → fall back to the seed.
+// Maps a backend card record to the sticker shape the UI consumes.
+// The backend exposes `category`; the UI reads it as `position`.
+function toSticker(card) {
+  return {
+    id: card.code,
+    number: card.number,
+    name: card.name,
+    team: card.team,
+    position: card.category,
+    rarity: card.rarity,
+    copies: card.copies,
+    status: statusFromCopies(card.copies),
   }
-  return seed
 }
 
 export function CollectionProvider({ children }) {
-  const [copiesById, setCopiesById] = useState(loadCopiesById)
+  const { token } = useAuth()
+  const [stickers, setStickers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  // Persist on every change.
+  // Hydrate the collection from the backend once the token is available.
+  // CollectionProvider only mounts inside ProtectedRoute, so `token` is set on
+  // mount and `loading`/`error` start from their initial state (no resync needed).
   useEffect(() => {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(copiesById))
-    } catch {
-      // Storage unavailable (private mode, quota) → keep working in-memory.
+    if (!token) return
+    let cancelled = false
+    fetchAlbum(token)
+      .then((cards) => {
+        if (!cancelled) setStickers(cards.map(toSticker))
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
     }
-  }, [copiesById])
+  }, [token])
 
-  // Live sticker list: base catalog enriched with current copies + derived status.
-  const stickers = useMemo(
-    () =>
-      STICKERS.map((s) => {
-        const copies = copiesById[s.id] ?? 0
-        return { ...s, copies, status: statusFromCopies(copies) }
-      }),
-    [copiesById],
-  )
-
-  // Headline stats, recomputed live from the copies map.
+  // Headline stats, recomputed live from the current copies.
   const stats = useMemo(() => {
     let tengo = 0
     let repetido = 0
@@ -77,15 +71,42 @@ export function CollectionProvider({ children }) {
     }
   }, [stickers])
 
-  const addCopy = (id) =>
-    setCopiesById((prev) => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }))
+  // Optimistic copy mutation: update local state immediately, persist to the
+  // backend with the new absolute count, and roll back if the request fails.
+  const setCopies = (id, next) => {
+    const current = stickers.find((s) => s.id === id)
+    if (!current || next === current.copies) return
+    const previous = current.copies
+    setStickers((prev) =>
+      prev.map((s) =>
+        s.id === id ? { ...s, copies: next, status: statusFromCopies(next) } : s,
+      ),
+    )
+    updateCardCopies(token, id, next).catch(() => {
+      setStickers((prev) =>
+        prev.map((s) =>
+          s.id === id
+            ? { ...s, copies: previous, status: statusFromCopies(previous) }
+            : s,
+        ),
+      )
+    })
+  }
 
-  const removeCopy = (id) =>
-    setCopiesById((prev) => ({ ...prev, [id]: Math.max(0, (prev[id] ?? 0) - 1) }))
+  const addCopy = (id) => {
+    const s = stickers.find((x) => x.id === id)
+    if (s) setCopies(id, s.copies + 1)
+  }
+
+  const removeCopy = (id) => {
+    const s = stickers.find((x) => x.id === id)
+    if (s) setCopies(id, Math.max(0, s.copies - 1))
+  }
 
   const value = useMemo(
-    () => ({ stickers, stats, addCopy, removeCopy }),
-    [stickers, stats],
+    () => ({ stickers, stats, loading, error, addCopy, removeCopy }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [stickers, stats, loading, error, token],
   )
 
   return <CollectionContext.Provider value={value}>{children}</CollectionContext.Provider>

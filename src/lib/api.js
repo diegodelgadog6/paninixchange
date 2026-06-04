@@ -53,3 +53,12 @@ export const loginUser = ({ email, password }) =>
 
 // GET /api/users/me → UserRead (requires a valid token).
 export const fetchMe = (token) => apiFetch('/api/users/me', { token })
+
+// GET /api/cards/album → [CardRead] (requires a valid token).
+// Full 994-card album in physical order, with the user's copy count per card.
+export const fetchAlbum = (token) => apiFetch('/api/cards/album', { token })
+
+// PATCH /api/cards/album/:code → CardRead. Sets the absolute copy count
+// (0 = missing) for one card in the authenticated user's collection.
+export const updateCardCopies = (token, code, copies) =>
+  apiFetch(`/api/cards/album/${code}`, { method: 'PATCH', token, body: { copies } })
