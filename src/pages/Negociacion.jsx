@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon'
 import BalanzaIndicator from '../components/BalanzaIndicator'
 import ConfirmTradeModal from '../components/ConfirmTradeModal'
@@ -105,6 +106,7 @@ function Negociacion() {
     setContactOpen,
     handleConfirm,
   } = useNegotiation()
+  const navigate = useNavigate()
 
   return (
     <div className="pb-32">
@@ -118,6 +120,7 @@ function Negociacion() {
           </div>
           <button
             type="button"
+            onClick={() => navigate('/dashboard')}
             className="rounded-lg bg-primary-container px-6 py-2 text-label-md text-white transition-opacity hover:opacity-90"
           >
             Conservar
@@ -173,6 +176,7 @@ function Negociacion() {
         <div className="flex items-center gap-3">
           <button
             type="button"
+            onClick={() => navigate(-1)}
             className="rounded-lg border border-outline-variant/40 px-6 py-3 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container"
           >
             Cancelar
