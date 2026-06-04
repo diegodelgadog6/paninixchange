@@ -1,9 +1,9 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import Icon from '../components/Icon'
+import Spinner from '../components/Spinner'
 import BalanzaIndicator from '../components/BalanzaIndicator'
 import ConfirmTradeModal from '../components/ConfirmTradeModal'
 import ContactUnlockedModal from '../components/ContactUnlockedModal'
-import { negotiation } from '../data/negotiation'
 import { useNegotiation } from '../hooks/useNegotiation'
 
 // A single cromo inside an offer column (with a remove control).
@@ -91,9 +91,31 @@ function InfoCard({ icon, title, children }) {
   )
 }
 
+// Centered message panel for the non-table states (no match selected / error).
+function NegotiationNotice({ icon, title, children }) {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-surface-container-low px-6 text-center">
+      <Icon name={icon} className="!text-[48px] text-outline-variant" />
+      <h2 className="text-headline-md text-primary">{title}</h2>
+      <p className="max-w-sm text-body-md text-on-surface-variant">{children}</p>
+      <Link
+        to="/radar"
+        className="mt-2 flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-label-md text-white transition-all hover:bg-primary-container"
+      >
+        <Icon name="radar" className="!text-[18px]" />
+        Ir al Radar
+      </Link>
+    </div>
+  )
+}
+
 function Negociacion() {
-  const { partner } = negotiation
+  const { collectorId } = useParams()
+  const navigate = useNavigate()
   const {
+    loading,
+    error,
+    partner,
     timeLeft,
     youOffer,
     theyOffer,
@@ -106,8 +128,26 @@ function Negociacion() {
     setConfirmOpen,
     setContactOpen,
     handleConfirm,
-  } = useNegotiation()
-  const navigate = useNavigate()
+  } = useNegotiation(collectorId)
+
+  // Reached via the sidebar with no collector selected — point back to the radar.
+  if (!collectorId) {
+    return (
+      <NegotiationNotice icon="swap_horiz" title="Ningún intercambio abierto">
+        Elige un coleccionista en el Radar para abrir la mesa de negociación.
+      </NegotiationNotice>
+    )
+  }
+
+  if (loading) return <Spinner label="Cargando intercambio" />
+
+  if (error) {
+    return (
+      <NegotiationNotice icon="error" title="No se pudo abrir la mesa">
+        {error}
+      </NegotiationNotice>
+    )
+  }
 
   return (
     <div className="pb-32">

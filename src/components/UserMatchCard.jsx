@@ -49,9 +49,9 @@ function UserMatchCard({ match }) {
         )}
       </div>
 
-      {/* Connecting reveals contact and opens the trade table (see ContactUnlockedModal) */}
+      {/* Connecting opens the trade table for this collector (see ContactUnlockedModal) */}
       <Link
-        to="/negociacion"
+        to={`/negociacion/${collector.id}`}
         className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary text-label-md text-white transition-all hover:bg-primary-container"
       >
         <Icon name="chat" className="!text-[18px]" />
