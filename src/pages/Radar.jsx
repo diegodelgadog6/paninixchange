@@ -108,7 +108,7 @@ function Radar() {
               type="button"
               className="w-full rounded-lg border border-outline-variant/40 py-2.5 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container"
             >
-              Ver todos los cercanos (14)
+              Ver todos los cercanos ({nearbyUsers.length})
             </button>
           </div>
         </aside>
