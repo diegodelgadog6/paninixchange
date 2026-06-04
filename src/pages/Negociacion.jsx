@@ -92,8 +92,9 @@ function InfoCard({ icon, title, children }) {
 }
 
 function Negociacion() {
-  const { partner, expiresIn } = negotiation
+  const { partner } = negotiation
   const {
+    timeLeft,
     youOffer,
     theyOffer,
     confirmOpen,
@@ -116,7 +117,7 @@ function Negociacion() {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2 text-on-surface-variant">
             <Icon name="timer" className="!text-[20px]" />
-            <span className="text-label-md">La oferta expira en {expiresIn}</span>
+            <span className="text-label-md">La oferta expira en {timeLeft}</span>
           </div>
           <button
             type="button"
