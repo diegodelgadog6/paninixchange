@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import Icon from '../components/Icon'
 import StatCard from '../components/StatCard'
@@ -6,8 +5,8 @@ import StickerCard from '../components/StickerCard'
 import MatchSuggestionCard from '../components/MatchSuggestionCard'
 import { currentUser } from '../data/users'
 import { FEATURED_IDS } from '../data/stickers'
-import { computeMatchSuggestions } from '../data/matches'
 import { useCollection } from '../context/CollectionContext'
+import { useMatches } from '../hooks/useMatches'
 
 // Collector hub. Lives inside AppLayout (sidebar + ml-64 main).
 function Dashboard() {
@@ -17,7 +16,7 @@ function Dashboard() {
   const featured = FEATURED_IDS.map((id) => stickers.find((s) => s.id === id)).filter(Boolean)
 
   // Live match suggestions derived from the current collection (recompute on edits).
-  const matches = useMemo(() => computeMatchSuggestions(stickers), [stickers])
+  const matches = useMatches()
 
   return (
     <div className="p-12">
