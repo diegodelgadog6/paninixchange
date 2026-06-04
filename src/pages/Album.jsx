@@ -47,7 +47,6 @@ function Album() {
   const [team, setTeam] = useState('todas')
   const [search, setSearch] = useState('')
   const tableRef = useRef(null)
-  const [tableVisible, setTableVisible] = useState(false)
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -116,26 +115,11 @@ function Album() {
             ))}
           </select>
         </div>
-        <div className="ml-6 flex flex-col items-end gap-1">
+        <div className="ml-6 flex flex-col items-end">
           <span className="text-label-md font-bold text-primary">
             {stats.owned} / {stats.total}
           </span>
           <span className="text-label-sm text-on-surface-variant">{progress}% Completo</span>
-          <button
-            type="button"
-            onClick={() => {
-              if (!tableVisible) {
-                setTableVisible(true)
-                tableRef.current?.scrollIntoView({ behavior: 'smooth' })
-              } else {
-                setTableVisible(false)
-                window.scrollTo({ top: 0, behavior: 'smooth' })
-              }
-            }}
-            className="rounded border border-outline-variant/40 px-2 py-0.5 text-label-sm text-on-surface-variant transition-colors hover:bg-surface-container"
-          >
-            {tableVisible ? 'Ver álbum ↑' : 'Ver tabla ↓'}
-          </button>
         </div>
       </header>
 
@@ -144,11 +128,20 @@ function Album() {
         <div className="mb-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
           <div>
             <h2 className="text-headline-lg tracking-tight text-primary">Álbum Mundial 2026</h2>
-            <p className="mt-1 text-body-md text-on-surface-variant">
-              Mostrando {filtered.length.toLocaleString('es')} de {stats.total.toLocaleString('es')} cromos
-              {filter !== 'todos' && ` · ${FILTERS.find((f) => f.key === filter).label}`}
-              {team !== 'todas' && ` · ${TEAM_OPTIONS.find((o) => o.value === team).label}`}
-            </p>
+            <div className="mt-1 flex items-center gap-3">
+              <p className="text-body-md text-on-surface-variant">
+                Mostrando {filtered.length.toLocaleString('es')} de {stats.total.toLocaleString('es')} cromos
+                {filter !== 'todos' && ` · ${FILTERS.find((f) => f.key === filter).label}`}
+                {team !== 'todas' && ` · ${TEAM_OPTIONS.find((o) => o.value === team).label}`}
+              </p>
+              <button
+                type="button"
+                onClick={() => tableRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                className="rounded border border-outline-variant/40 px-2 py-0.5 text-label-sm text-on-surface-variant transition-colors hover:bg-surface-container"
+              >
+                Ver tabla ↓
+              </button>
+            </div>
           </div>
           <div className="flex items-center gap-4 text-label-sm text-on-surface-variant">
             <Legend color="bg-primary" label={`Tengo ${stats.tengo}`} />
@@ -182,7 +175,16 @@ function Album() {
         {filtered.length > 0 && (
           <section ref={tableRef} className="mt-12 overflow-hidden rounded-xl border border-outline-variant/10 bg-surface-container-lowest">
             <div className="flex items-center justify-between border-b border-outline-variant/10 px-6 py-4">
-              <h3 className="text-headline-md text-primary">Estadísticas de Inventario</h3>
+              <div className="flex items-center gap-3">
+                <h3 className="text-headline-md text-primary">Estadísticas de Inventario</h3>
+                <button
+                  type="button"
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className="rounded border border-outline-variant/40 px-2 py-0.5 text-label-sm text-on-surface-variant transition-colors hover:bg-surface-container"
+                >
+                  ↑ Ver álbum
+                </button>
+              </div>
               <span className="text-label-sm text-on-surface-variant">
                 {filtered.length.toLocaleString('es')} cromos
               </span>
