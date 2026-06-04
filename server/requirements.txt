@@ -3,5 +3,9 @@ uvicorn[standard]
 sqlmodel
 sqlalchemy[asyncio]
 asyncpg
+aiosqlite
 python-dotenv
 pydantic
+email-validator
+bcrypt
+pyjwt
