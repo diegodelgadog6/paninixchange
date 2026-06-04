@@ -3,15 +3,16 @@ import Icon from '../components/Icon'
 import StatCard from '../components/StatCard'
 import StickerCard from '../components/StickerCard'
 import MatchSuggestionCard from '../components/MatchSuggestionCard'
-import { currentUser } from '../data/users'
 import { FEATURED_IDS } from '../data/stickers'
+import { useAuth } from '../context/AuthContext'
 import { useCollection } from '../context/CollectionContext'
 import { useMatches } from '../hooks/useMatches'
 
 // Collector hub. Lives inside AppLayout (sidebar + ml-64 main).
 function Dashboard() {
+  const { user } = useAuth()
   const { stickers, stats } = useCollection()
-  const firstName = currentUser.name.split(' ')[0]
+  const firstName = user.name.split(' ')[0]
   const progress = Math.round((stats.owned / stats.total) * 100)
   const featured = FEATURED_IDS.map((id) => stickers.find((s) => s.id === id)).filter(Boolean)
 

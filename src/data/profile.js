@@ -1,12 +1,12 @@
-import { currentUser } from './users'
-
 // Collector profile / reputation data.
 // Real app: GET /api/users/:id with aggregated reputation (rating, trades, badges).
-export const profile = {
-  name: currentUser.name,
-  avatar: currentUser.avatar,
-  location: currentUser.location,
-  memberSince: currentUser.memberSince,
+// Identity fields (name, avatar, location, memberSince) come from the live auth
+// user; reputation/history below stay mock until those endpoints exist.
+export const buildProfile = (user) => ({
+  name: user.name,
+  avatar: user.avatar,
+  location: user.location,
+  memberSince: user.memberSince,
   rating: 4.8,
   reviews: 42,
   successfulTrades: 124,
@@ -32,4 +32,4 @@ export const profile = {
     { id: 'h4', date: '28 Oct 2025', partner: 'Sofía R.', cromos: '3 (Mundial 2026)', rating: 5 },
     { id: 'h5', date: '21 Oct 2025', partner: 'Andrés P.', cromos: '7 (Eurocopa)', rating: 4 },
   ],
-}
+})
