@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react'
 import Icon from '../components/Icon'
 import BalanzaIndicator from '../components/BalanzaIndicator'
 import ConfirmTradeModal from '../components/ConfirmTradeModal'
 import ContactUnlockedModal from '../components/ContactUnlockedModal'
-import { negotiation, computeBalance } from '../data/negotiation'
+import { negotiation } from '../data/negotiation'
+import { useNegotiation } from '../hooks/useNegotiation'
 
 // A single cromo inside an offer column (with a remove control).
 function OfferCard({ sticker, onRemove }) {
@@ -92,20 +92,19 @@ function InfoCard({ icon, title, children }) {
 
 function Negociacion() {
   const { partner, expiresIn } = negotiation
-  const [youOffer, setYouOffer] = useState(negotiation.youOffer)
-  const [theyOffer, setTheyOffer] = useState(negotiation.theyOffer)
-  const [confirmOpen, setConfirmOpen] = useState(false)
-  const [contactOpen, setContactOpen] = useState(false)
-
-  const balance = useMemo(() => computeBalance(youOffer, theyOffer), [youOffer, theyOffer])
-  const canConfirm = youOffer.length > 0 && theyOffer.length > 0
-
-  const removeFrom = (setter) => (id) => setter((list) => list.filter((s) => s.id !== id))
-
-  const handleConfirm = () => {
-    setConfirmOpen(false)
-    setContactOpen(true)
-  }
+  const {
+    youOffer,
+    theyOffer,
+    confirmOpen,
+    contactOpen,
+    balance,
+    canConfirm,
+    removeFromYou,
+    removeFromThem,
+    setConfirmOpen,
+    setContactOpen,
+    handleConfirm,
+  } = useNegotiation()
 
   return (
     <div className="pb-32">
@@ -130,7 +129,7 @@ function Negociacion() {
         <div className="grid grid-cols-12 items-stretch gap-6">
           {/* Tú ofreces */}
           <div className="col-span-12 lg:col-span-5">
-            <OfferColumn title="Tú ofreces" stickers={youOffer} onRemove={removeFrom(setYouOffer)} />
+            <OfferColumn title="Tú ofreces" stickers={youOffer} onRemove={removeFromYou} />
           </div>
 
           {/* Balanza */}
@@ -145,7 +144,7 @@ function Negociacion() {
               title="Ellos ofrecen"
               subtitle={partner.username}
               stickers={theyOffer}
-              onRemove={removeFrom(setTheyOffer)}
+              onRemove={removeFromThem}
               tone="muted"
             />
           </div>

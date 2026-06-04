@@ -2,9 +2,6 @@
 // Real app: GET /api/trades/:id. The partner's contact details stay hidden until
 // the trade is confirmed (privacy by design) — that's what ContactUnlockedModal reveals.
 
-// Relative trade value per rarity, used to compute the balanza de equilibrio.
-export const STICKER_VALUE = { legend: 5, gold: 4, base: 2 }
-
 export const negotiation = {
   partner: {
     username: '@ColeccionistaPro',
@@ -23,13 +20,4 @@ export const negotiation = {
     { id: 't1', number: 7, team: 'FRA', name: 'Kylian Mbappé', tier: 'Estrella • Oro', rarity: 'gold' },
     { id: 't2', number: 1, team: 'GER', name: 'Manuel Neuer', tier: 'Portero • Base', rarity: 'base' },
   ],
-}
-
-// Compares the total value of both sides → 'justo' | 'favorable' | 'sacrificio'.
-export function computeBalance(youOffer, theyOffer) {
-  const sum = (list) => list.reduce((acc, s) => acc + (STICKER_VALUE[s.rarity] ?? 0), 0)
-  const diff = sum(theyOffer) - sum(youOffer) // positive = you receive more
-  if (diff >= 2) return 'favorable'
-  if (diff <= -2) return 'sacrificio'
-  return 'justo'
 }
