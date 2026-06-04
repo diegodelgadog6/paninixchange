@@ -4,9 +4,9 @@ import UserMatchCard from '../components/UserMatchCard'
 import { nearbyUsers } from '../data/users'
 
 function Radar() {
-  // Radius slider is UI-only — it updates the label and the coverage circle.
   const [radius, setRadius] = useState(5.2)
   const circleSize = `${120 + radius * 18}px`
+  const visibleUsers = nearbyUsers.filter((u) => u.distanceKm <= radius)
 
   return (
     <div className="relative flex h-screen flex-col">
@@ -67,7 +67,7 @@ function Radar() {
           </div>
 
           {/* Collector pins */}
-          {nearbyUsers.map((user) => (
+          {visibleUsers.map((user) => (
             <button
               key={user.id}
               type="button"
@@ -95,11 +95,11 @@ function Radar() {
           <div className="border-b border-outline-variant/10 p-4">
             <h2 className="text-headline-md text-primary">Coleccionistas Cercanos</h2>
             <p className="text-label-sm text-on-surface-variant">
-              {nearbyUsers.length} coleccionistas compatibles encontrados
+              {visibleUsers.length} coleccionistas compatibles encontrados
             </p>
           </div>
           <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto p-4">
-            {nearbyUsers.map((user) => (
+            {visibleUsers.map((user) => (
               <UserMatchCard key={user.id} user={user} />
             ))}
           </div>
@@ -108,7 +108,7 @@ function Radar() {
               type="button"
               className="w-full rounded-lg border border-outline-variant/40 py-2.5 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container"
             >
-              Ver todos los cercanos (14)
+              Ver todos los cercanos ({nearbyUsers.length})
             </button>
           </div>
         </aside>
