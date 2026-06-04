@@ -1,4 +1,11 @@
 .env
+
+# Local SQLite dev database
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
 __pycache__/
 *.pyc
 *.pyo

@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from database import get_session
+
+from deps import get_current_user
+from models.user import User
+from schemas import UserRead
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
 
-@router.get("/me")
-async def get_me(session: AsyncSession = Depends(get_session)):
-    # TODO: return authenticated user profile
-    return {"message": "GET /api/users/me — not yet implemented"}
+@router.get("/me", response_model=UserRead)
+async def get_me(current_user: User = Depends(get_current_user)):
+    """Return the authenticated user's profile."""
+    return current_user
