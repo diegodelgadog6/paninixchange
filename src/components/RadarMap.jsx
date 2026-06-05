@@ -35,6 +35,7 @@ export default function RadarMap({ lat, lng, radiusKm, city }) {
   useEffect(() => {
     const L = window.L
     if (!L || !containerRef.current) return
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return // bad coords — don't crash Leaflet
     if (mapRef.current) return // already mounted
 
     const map = L.map(containerRef.current, {

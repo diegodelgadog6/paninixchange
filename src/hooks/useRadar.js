@@ -7,10 +7,27 @@ import { useRadarMatches } from '../context/RadarContext'
 
 const STORAGE_KEY = 'pxc:radar-search'
 
+// A saved search is only usable if it carries numeric coordinates — the map needs
+// them to render (RadarMap.setView). Older app versions stored { city, radius } without
+// lat/lng; treat those as "no location" so the user re-runs setup instead of crashing
+// the map with "Invalid LatLng object: (undefined, undefined)".
+function isValidSearch(s) {
+  return (
+    !!s &&
+    Number.isFinite(s.lat) &&
+    Number.isFinite(s.lng) &&
+    Number.isFinite(s.radius)
+  )
+}
+
 function loadSearch() {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : null
+    const parsed = raw ? JSON.parse(raw) : null
+    if (isValidSearch(parsed)) return parsed
+    // Drop stale/incompatible entries so they don't linger.
+    if (parsed !== null) window.localStorage.removeItem(STORAGE_KEY)
+    return null
   } catch {
     return null
   }

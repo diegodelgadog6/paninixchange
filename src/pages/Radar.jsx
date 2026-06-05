@@ -2,7 +2,21 @@ import { Suspense, lazy } from 'react'
 import Icon from '../components/Icon'
 import UserMatchCard from '../components/UserMatchCard'
 import RadarSetup from '../components/RadarSetup'
+import ErrorBoundary from '../components/ErrorBoundary'
 import { useRadar } from '../hooks/useRadar'
+
+// Shown when the map subtree throws (e.g. Leaflet CDN blocked) so the page keeps
+// working — the nearby-collectors panel still renders on top of this.
+const mapFallback = (
+  <div className="absolute inset-0 flex items-center justify-center bg-surface-bright">
+    <div className="mx-4 max-w-sm rounded-2xl bg-white/90 p-6 text-center shadow-lg">
+      <Icon name="map" className="mb-2 !text-[40px] text-outline-variant" />
+      <p className="text-label-sm text-on-surface-variant">
+        No se pudo cargar el mapa. Revisa tu conexión e inténtalo de nuevo.
+      </p>
+    </div>
+  </div>
+)
 
 // RadarMap uses Leaflet (loaded via CDN) — lazy-load so it never blocks
 // pages that don't need a map.
@@ -93,14 +107,16 @@ function Radar() {
 
         {/* ── Leaflet map ── */}
         {hasLocation ? (
-          <Suspense fallback={<div className="absolute inset-0 bg-surface-bright" />}>
-            <RadarMap
-              lat={search.lat}
-              lng={search.lng}
-              radiusKm={search.radius}
-              city={search.city}
-            />
-          </Suspense>
+          <ErrorBoundary fallback={mapFallback}>
+            <Suspense fallback={<div className="absolute inset-0 bg-surface-bright" />}>
+              <RadarMap
+                lat={search.lat}
+                lng={search.lng}
+                radiusKm={search.radius}
+                city={search.city}
+              />
+            </Suspense>
+          </ErrorBoundary>
         ) : (
           /* Placeholder when no location is set */
           <div className="absolute inset-0 bg-surface-bright">
