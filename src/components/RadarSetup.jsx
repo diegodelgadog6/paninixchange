@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import Icon from './Icon'
 
 // Nominatim (OpenStreetMap) — free, no key required.
