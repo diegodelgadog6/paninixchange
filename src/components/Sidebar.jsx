@@ -9,8 +9,13 @@ const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
   { to: '/album', label: 'Álbum Digital', icon: 'menu_book' },
   { to: '/radar', label: 'Trade Radar', icon: 'radar' },
+<<<<<<< Updated upstream
   { to: '/negociacion', label: 'Mis Matches', icon: 'swap_horiz' },
   { to: '/perfil', label: 'Comunidad', icon: 'group' },
+=======
+  { to: '/matches', label: 'Mis Matches', icon: 'swap_horiz', badge: 'matches' },
+  { to: '/perfil', label: 'Perfil', icon: 'group' },
+>>>>>>> Stashed changes
 ]
 
 function Sidebar() {
