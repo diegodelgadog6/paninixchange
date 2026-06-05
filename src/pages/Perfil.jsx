@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import Icon from '../components/Icon'
+import Modal from '../components/Modal'
 import Spinner from '../components/Spinner'
 import StarRating from '../components/StarRating'
 import RatingModal from '../components/RatingModal'
 import { buildProfile, buildCollectionStats, buildPointsTile } from '../data/profile'
-import { createReview } from '../lib/api'
+import { createReview, updateMe, cancelSubscription } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import { useCollection } from '../context/CollectionContext'
 import { useReputation } from '../hooks/useReputation'
@@ -41,10 +43,17 @@ function Badge({ badge }) {
 }
 
 function Perfil() {
-  const { user, token } = useAuth()
+  const { user, token, refreshUser } = useAuth()
+  const [searchParams] = useSearchParams()
   const collection = useCollection()
   const { reputation, loading: repLoading, error: repError, refresh } = useReputation()
   const [rateOpen, setRateOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [configOpen, setConfigOpen] = useState(false)
+
+  useEffect(() => {
+    if (searchParams.get('config') === '1') setConfigOpen(true)
+  }, [searchParams])
 
   const profile = useMemo(
     () => (reputation ? buildProfile(user, reputation) : null),
@@ -121,6 +130,13 @@ function Perfil() {
           </div>
 
           <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => setEditOpen(true)}
+              className="rounded-lg border border-outline-variant/40 px-6 py-2.5 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container"
+            >
+              Editar Perfil
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -217,7 +233,269 @@ function Perfil() {
         partner={recentTrade?.partner ?? 'el coleccionista'}
         onSubmit={submitReview}
       />
+
+      <EditProfileModal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        user={user}
+        token={token}
+        onSaved={refreshUser}
+      />
+
+      <ConfigModal
+        open={configOpen}
+        onClose={() => setConfigOpen(false)}
+        user={user}
+        token={token}
+        onSaved={refreshUser}
+      />
     </div>
+  )
+}
+
+function EditProfileModal({ open, onClose, user, token, onSaved }) {
+  const [username, setUsername] = useState(user?.username ?? '')
+  const [email, setEmail] = useState(user?.email ?? '')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [avatarPreview, setAvatarPreview] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  const passwordMismatch = password !== '' && confirmPassword !== '' && password !== confirmPassword
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => setAvatarPreview(ev.target.result)
+    reader.readAsDataURL(file)
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (passwordMismatch) return
+    setSaving(true)
+    setError(null)
+    const payload = {}
+    if (username !== user?.username) payload.username = username
+    if (email !== user?.email) payload.email = email
+    if (password) payload.password = password
+    try {
+      if (avatarPreview) {
+        try { window.localStorage.setItem('pxc:avatar', avatarPreview) } catch {}
+      }
+      await updateMe(token, payload)
+      await onSaved()
+      onClose()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const inputClass =
+    'w-full rounded-lg border border-outline-variant/40 bg-surface px-4 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary'
+
+  const currentAvatar = avatarPreview ?? user?.avatar
+
+  return (
+    <Modal open={open} onClose={onClose} title="Editar Perfil">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {/* Avatar upload */}
+        <div className="flex justify-center">
+          <label className="group relative cursor-pointer">
+            <img
+              src={currentAvatar}
+              alt="Avatar"
+              className="h-20 w-20 rounded-2xl object-cover"
+            />
+            <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+              <Icon name="photo_camera" className="!text-[24px] text-white" />
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={handleAvatarChange}
+            />
+          </label>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-label-md text-on-surface-variant">Nombre de usuario</label>
+          <input
+            className={inputClass}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            autoComplete="username"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-label-md text-on-surface-variant">Correo electrónico</label>
+          <input
+            type="email"
+            className={inputClass}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-label-md text-on-surface-variant">
+            Nueva contraseña <span className="text-on-surface-variant/60">(dejar vacío para no cambiar)</span>
+          </label>
+          <input
+            type="password"
+            className={inputClass}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+            placeholder="••••••••"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-label-md text-on-surface-variant">Confirmar contraseña</label>
+          <input
+            type="password"
+            className={`${inputClass} ${passwordMismatch ? 'border-error focus:border-error focus:ring-error' : ''}`}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            autoComplete="new-password"
+            placeholder="••••••••"
+          />
+          {passwordMismatch && (
+            <p className="mt-1 text-label-sm text-error">Las contraseñas no coinciden</p>
+          )}
+        </div>
+        {error && <p className="text-label-md text-error">{error}</p>}
+        <div className="flex justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg px-5 py-2.5 text-label-md text-on-surface-variant hover:bg-surface-container"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={saving || passwordMismatch}
+            className="rounded-lg bg-primary px-5 py-2.5 text-label-md font-bold text-white hover:bg-primary/90 disabled:opacity-60"
+          >
+            {saving ? 'Guardando…' : 'Guardar cambios'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
+const PLAN_LABELS = { free: 'Gratis', pro: 'Pro', leyenda: 'Leyenda' }
+const PLAN_ICONS = { free: 'workspace_premium', pro: 'star', leyenda: 'military_tech' }
+const PLAN_FEATURES = {
+  free: ['Álbum digital de 994 cromos', 'Radar hasta 5 km', '3 intercambios al mes'],
+  pro: ['Radar ilimitado hasta 15 km', 'Matches automáticos en tiempo real', 'Intercambios ilimitados', 'Insignia Pro'],
+  leyenda: ['Todo lo de Pro', 'Acceso anticipado a cromos especiales', 'Analítica avanzada', 'Soporte prioritario 24/7'],
+}
+
+function ConfigModal({ open, onClose, user, token, onSaved }) {
+  const navigate = useNavigate()
+  const [confirmCancel, setConfirmCancel] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [error, setError] = useState(null)
+
+  const plan = user?.membershipCode ?? 'free'
+  const isPaid = plan !== 'free'
+
+  const handleCancel = async () => {
+    setCancelling(true)
+    setError(null)
+    try {
+      await cancelSubscription(token)
+      await onSaved()
+      setConfirmCancel(false)
+      onClose()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setCancelling(false)
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Configuración">
+      {/* Current plan card */}
+      <div className="mb-4 rounded-xl bg-surface-container-low p-4">
+        <div className="mb-3 flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary-container/20">
+            <Icon name={PLAN_ICONS[plan] ?? 'workspace_premium'} fill className="!text-[22px] text-secondary" />
+          </div>
+          <div>
+            <p className="text-label-sm text-on-surface-variant">Plan actual</p>
+            <p className="text-headline-sm font-bold text-primary">{PLAN_LABELS[plan] ?? plan}</p>
+          </div>
+        </div>
+        <ul className="space-y-1">
+          {(PLAN_FEATURES[plan] ?? []).map((f) => (
+            <li key={f} className="flex items-center gap-2 text-label-md text-on-surface-variant">
+              <Icon name="check" className="!text-[16px] text-secondary" />
+              {f}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {!confirmCancel ? (
+        <div className="flex flex-col gap-2">
+          {plan !== 'leyenda' && (
+            <button
+              type="button"
+              onClick={() => { onClose(); navigate('/premium') }}
+              className="w-full rounded-lg bg-primary py-2.5 text-label-md font-bold text-white hover:bg-primary/90 transition-colors"
+            >
+              {plan === 'free' ? 'Ver planes premium' : 'Mejorar a Leyenda'}
+            </button>
+          )}
+          {isPaid && (
+            <button
+              type="button"
+              onClick={() => setConfirmCancel(true)}
+              className="w-full rounded-lg border border-error/40 py-2.5 text-label-md text-error hover:bg-error/5 transition-colors"
+            >
+              Cancelar suscripción
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-error/30 bg-error/5 p-4">
+          <p className="mb-1 text-label-md font-bold text-error">
+            ¿Cancelar tu suscripción {PLAN_LABELS[plan]}?
+          </p>
+          <p className="mb-4 text-label-sm text-on-surface-variant">
+            Perderás acceso a las funciones premium al final del período actual.
+          </p>
+          {error && <p className="mb-3 text-label-sm text-error">{error}</p>}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setConfirmCancel(false)}
+              className="flex-1 rounded-lg border border-outline-variant/40 py-2 text-label-md text-on-surface-variant hover:bg-surface-container transition-colors"
+            >
+              Volver
+            </button>
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={cancelling}
+              className="flex-1 rounded-lg bg-error py-2 text-label-md font-bold text-white hover:bg-error/90 disabled:opacity-60 transition-colors"
+            >
+              {cancelling ? 'Cancelando…' : 'Sí, cancelar'}
+            </button>
+          </div>
+        </div>
+      )}
+    </Modal>
   )
 }
 

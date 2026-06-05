@@ -84,6 +84,12 @@ export function AuthProvider({ children }) {
     setUser(null)
   }, [])
 
+  const refreshUser = useCallback(async () => {
+    if (!token) return
+    const apiUser = await fetchMe(token)
+    setUser(toCurrentUser(apiUser))
+  }, [token])
+
   const value = useMemo(
     () => ({
       token,
@@ -94,8 +100,9 @@ export function AuthProvider({ children }) {
       login,
       register,
       logout,
+      refreshUser,
     }),
-    [token, user, loading, login, register, logout],
+    [token, user, loading, login, register, logout, refreshUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
