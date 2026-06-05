@@ -55,8 +55,9 @@ export function toCurrentUser(apiUser) {
     membership: MEMBERSHIP_LABELS[apiUser.membership] ?? apiUser.membership,
     location: apiUser.location ?? '',
     memberSince: formatMemberSince(apiUser.created_at),
-    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      name,
-    )}&background=0d3b2e&color=fdcc22&bold=true&size=128`,
+    avatar: (() => {
+      try { const s = window.localStorage.getItem('pxc:avatar'); if (s) return s } catch {}
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0d3b2e&color=fdcc22&bold=true&size=128`
+    })(),
   }
 }

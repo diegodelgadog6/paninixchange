@@ -53,6 +53,9 @@ export const loginUser = ({ email, password }) =>
 
 export const fetchMe = (token) => apiFetch('/api/users/me', { token })
 
+export const updateMe = (token, data) =>
+  apiFetch('/api/users/me', { method: 'PATCH', token, body: data })
+
 export const fetchReputation = (token) => apiFetch('/api/users/me/reputation', { token })
 
 // ── Album ───────────────────────────────────────────────────────────────────
