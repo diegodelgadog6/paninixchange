@@ -129,22 +129,13 @@ function Perfil() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col items-center justify-center gap-2 self-center">
             <button
               type="button"
               onClick={() => setEditOpen(true)}
               className="rounded-lg border border-outline-variant/40 px-6 py-2.5 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container"
             >
               Editar Perfil
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                navigator.clipboard.writeText(user?.username ?? user?.email ?? '')
-              }}
-              className="rounded-lg border border-outline-variant/40 px-6 py-2.5 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container"
-            >
-              Compartir Perfil
             </button>
           </div>
         </header>
@@ -256,6 +247,7 @@ function Perfil() {
 function EditProfileModal({ open, onClose, user, token, onSaved }) {
   const [username, setUsername] = useState(user?.username ?? '')
   const [email, setEmail] = useState(user?.email ?? '')
+  const [phone, setPhone] = useState(user?.phone ?? '')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [avatarPreview, setAvatarPreview] = useState(null)
@@ -280,6 +272,7 @@ function EditProfileModal({ open, onClose, user, token, onSaved }) {
     const payload = {}
     if (username !== user?.username) payload.username = username
     if (email !== user?.email) payload.email = email
+    if (phone !== (user?.phone ?? '')) payload.phone = phone
     if (password) payload.password = password
     try {
       if (avatarPreview) {
@@ -341,6 +334,20 @@ function EditProfileModal({ open, onClose, user, token, onSaved }) {
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
           />
+        </div>
+        <div>
+          <label className="mb-1 block text-label-md text-on-surface-variant">Número de WhatsApp</label>
+          <input
+            type="tel"
+            className={inputClass}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            autoComplete="tel"
+            placeholder="+52 55 1234 5678"
+          />
+          <p className="mt-1 text-label-sm text-on-surface-variant/70">
+            Solo se comparte con tu socio de intercambio tras confirmar el trato.
+          </p>
         </div>
         <div>
           <label className="mb-1 block text-label-md text-on-surface-variant">
