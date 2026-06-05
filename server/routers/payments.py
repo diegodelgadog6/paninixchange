@@ -61,7 +61,7 @@ async def stripe_webhook(
 
     if event["type"] == "checkout.session.completed":
         checkout = event["data"]["object"]
-        user_id = int(checkout.get("client_reference_id", 0))
+        user_id = int(getattr(checkout, "client_reference_id", None) or 0)
         line_items = stripe.checkout.Session.list_line_items(checkout["id"], limit=1)
         price_id = line_items["data"][0]["price"]["id"] if line_items["data"] else ""
         membership = next(
