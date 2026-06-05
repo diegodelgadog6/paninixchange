@@ -145,3 +145,11 @@ export const createReview = (token, { tradeId, rating, comment }) =>
     token,
     body: { trade_id: tradeId, rating, comment: comment || null },
   })
+
+// ── Support ──────────────────────────────────────────────────────────────────
+
+export const sendSupportEmail = ({ subject, message, senderEmail }) =>
+  apiFetch('/api/support', {
+    method: 'POST',
+    body: { subject, message, sender_email: senderEmail },
+  })

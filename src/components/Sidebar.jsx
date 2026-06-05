@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { NavLink, Link, useNavigate } from 'react-router-dom'
 import Icon from './Icon'
 import Logo from './Logo'
 import { useAuth } from '../context/AuthContext'
 import { useMatches } from '../context/MatchesContext'
+import { sendSupportEmail } from '../lib/api'
 
 // Primary navigation for the logged-in app shell. Active route is highlighted
 // in golden accent, matching the Stitch dashboard/radar mockups.
@@ -20,6 +22,7 @@ function Sidebar() {
   const { unseenCount } = useMatches()
   const navigate = useNavigate()
   const badgeCounts = { matches: unseenCount }
+  const [supportOpen, setSupportOpen] = useState(false)
 
   const onLogout = () => {
     logout()
@@ -98,13 +101,143 @@ function Sidebar() {
         </button>
         <button
           type="button"
+          onClick={() => setSupportOpen(true)}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-label-md text-primary-fixed-dim hover:bg-white/5 hover:text-white transition-colors"
         >
           <Icon name="help" className="!text-[20px]" />
           Support
         </button>
       </div>
+
+      <SupportModal
+        open={supportOpen}
+        onClose={() => setSupportOpen(false)}
+        userEmail={user?.email}
+      />
     </aside>
+  )
+}
+
+const SUBJECTS = [
+  'Reporte de bug',
+  'Problema con intercambio',
+  'Problema con cuenta',
+  'Pago o suscripción',
+  'Otro',
+]
+
+function SupportModal({ open, onClose, userEmail }) {
+  const [subject, setSubject] = useState(SUBJECTS[0])
+  const [message, setMessage] = useState('')
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState(null)
+  const [sent, setSent] = useState(false)
+
+  if (!open) return null
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setSending(true)
+    setError(null)
+    try {
+      await sendSupportEmail({ subject, message, senderEmail: userEmail })
+      setSent(true)
+      setMessage('')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const handleClose = () => {
+    setSent(false)
+    setError(null)
+    setMessage('')
+    setSubject(SUBJECTS[0])
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+      <div className="absolute inset-0 bg-primary/20 backdrop-blur-sm" onClick={handleClose} />
+      <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-headline-md text-primary">Contactar soporte</h3>
+          <button
+            type="button"
+            onClick={handleClose}
+            aria-label="Cerrar"
+            className="text-on-surface-variant transition-colors hover:text-primary"
+          >
+            <Icon name="close" />
+          </button>
+        </div>
+
+        {sent ? (
+          <div className="flex flex-col items-center gap-3 py-6 text-center">
+            <Icon name="check_circle" fill className="!text-[48px] text-secondary" />
+            <p className="text-headline-sm text-primary">¡Mensaje enviado!</p>
+            <p className="text-body-md text-on-surface-variant">
+              Te responderemos a <span className="font-semibold">{userEmail}</span> a la brevedad.
+            </p>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="mt-2 rounded-lg bg-primary px-6 py-2.5 text-label-md font-bold text-white hover:bg-primary/90"
+            >
+              Cerrar
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div>
+              <label className="mb-1 block text-label-md text-on-surface-variant">Asunto</label>
+              <select
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                className="w-full rounded-lg border border-outline-variant/40 bg-surface px-4 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              >
+                {SUBJECTS.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-label-md text-on-surface-variant">Mensaje</label>
+              <textarea
+                required
+                rows={5}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Describe tu problema con el mayor detalle posible…"
+                className="w-full resize-none rounded-lg border border-outline-variant/40 bg-surface px-4 py-2.5 text-body-md text-on-surface outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            <p className="text-label-sm text-on-surface-variant">
+              Responderemos a <span className="font-semibold">{userEmail}</span>
+            </p>
+            {error && <p className="text-label-sm text-error">{error}</p>}
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="rounded-lg px-5 py-2.5 text-label-md text-on-surface-variant hover:bg-surface-container"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={sending}
+                className="rounded-lg bg-primary px-5 py-2.5 text-label-md font-bold text-white hover:bg-primary/90 disabled:opacity-60"
+              >
+                {sending ? 'Enviando…' : 'Enviar'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
   )
 }
 
