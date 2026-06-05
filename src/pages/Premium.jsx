@@ -54,7 +54,11 @@ const PLANS = [
   },
 ]
 
-function PlanCard({ plan, yearly, onCheckout, loading }) {
+function PlanCard({ plan, yearly, onCheckout, loading, membershipCode }) {
+  const RANK = { free: 0, pro: 1, legend: 2, leyenda: 2 }
+  const isCurrent = plan.id === membershipCode || (plan.id === 'legend' && membershipCode === 'leyenda')
+  const isLower = (RANK[plan.id] ?? 0) < (RANK[membershipCode] ?? 0)
+  const isDisabled = isCurrent || isLower || loading
   const price = yearly ? plan.yearly : plan.monthly
   const period = yearly ? '/año' : '/mes'
 
@@ -101,17 +105,17 @@ function PlanCard({ plan, yearly, onCheckout, loading }) {
 
       <button
         type="button"
-        disabled={plan.current || loading}
-        onClick={() => !plan.current && onCheckout(plan.id)}
+        disabled={isDisabled}
+        onClick={() => !isDisabled && onCheckout(plan.id)}
         className={`w-full rounded-lg py-3 text-label-md font-bold transition-all active:scale-[0.98] ${
-          plan.current || loading
+          isDisabled
             ? 'cursor-default border border-outline-variant/40 text-on-surface-variant'
             : plan.featured
               ? 'bg-secondary-container text-primary hover:bg-secondary-fixed'
               : 'bg-primary text-white hover:bg-primary-container'
         }`}
       >
-        {loading && !plan.current ? 'Redirigiendo…' : plan.cta}
+        {isCurrent ? 'Plan actual' : isLower && plan.id === 'free' ? 'Cambiar a Gratis' : loading ? 'Redirigiendo…' : plan.cta}
       </button>
     </div>
   )
@@ -119,7 +123,8 @@ function PlanCard({ plan, yearly, onCheckout, loading }) {
 
 function Premium() {
   const [yearly, setYearly] = useState(false)
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
+  const membershipCode = user?.membershipCode ?? 'free'
   const navigate = useNavigate()
   const { checkout, loading, error } = usePayment()
 
@@ -128,6 +133,7 @@ function Premium() {
       navigate('/login')
       return
     }
+    if (plan === 'free') return
     checkout(plan)
   }
 
@@ -180,7 +186,7 @@ function Premium() {
         <section className="px-12 pb-16">
           <div className="mx-auto grid max-w-[1100px] grid-cols-1 items-center gap-6 md:grid-cols-3">
             {PLANS.map((plan) => (
-              <PlanCard key={plan.id} plan={plan} yearly={yearly} onCheckout={handleCheckout} loading={loading} />
+              <PlanCard key={plan.id} plan={plan} yearly={yearly} onCheckout={handleCheckout} loading={loading} membershipCode={membershipCode} />
             ))}
           </div>
 
