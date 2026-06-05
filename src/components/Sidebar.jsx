@@ -12,7 +12,7 @@ const NAV_ITEMS = [
   { to: '/album', label: 'Álbum Digital', icon: 'menu_book' },
   { to: '/radar', label: 'Trade Radar', icon: 'radar' },
   { to: '/matches', label: 'Mis Matches', icon: 'swap_horiz', badge: 'matches' },
-  { to: '/perfil', label: 'Comunidad', icon: 'group' },
+  { to: '/perfil', label: 'Perfil', icon: 'group' },
 ]
 
 function Sidebar() {
