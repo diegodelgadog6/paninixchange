@@ -50,3 +50,7 @@ ALLOWED_ORIGINS: list[str] = [
 # Stripe
 STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+
+# Resend
+RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
+SUPPORT_EMAIL: str = os.getenv("SUPPORT_EMAIL", "support@paninixchange.app")
