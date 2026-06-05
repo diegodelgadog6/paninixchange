@@ -15,6 +15,7 @@ function errorMessage(body, status) {
 }
 
 // Core request helper. Attaches JSON headers and an optional Bearer token.
+// Returns null (not an error) for 204 No Content responses.
 async function apiFetch(path, { method = 'GET', body, token } = {}) {
   const headers = { 'Content-Type': 'application/json' }
   if (token) headers.Authorization = `Bearer ${token}`
@@ -27,10 +28,10 @@ async function apiFetch(path, { method = 'GET', body, token } = {}) {
       body: body ? JSON.stringify(body) : undefined,
     })
   } catch {
-    // Network error / server down.
     throw new Error('No se pudo conectar con el servidor.')
   }
 
+  if (res.status === 204) return null
   const data = await res.json().catch(() => null)
   if (!res.ok) {
     const err = new Error(errorMessage(data, res.status))
@@ -40,66 +41,103 @@ async function apiFetch(path, { method = 'GET', body, token } = {}) {
   return data
 }
 
-// POST /api/auth/register → UserRead (does NOT return a token).
-export const registerUser = ({ username, email, password }) =>
-  apiFetch('/api/auth/register', {
-    method: 'POST',
-    body: { username, email, password },
-  })
+// ── Auth ────────────────────────────────────────────────────────────────────
 
-// POST /api/auth/login → { access_token, token_type }.
+export const registerUser = ({ username, email, password }) =>
+  apiFetch('/api/auth/register', { method: 'POST', body: { username, email, password } })
+
 export const loginUser = ({ email, password }) =>
   apiFetch('/api/auth/login', { method: 'POST', body: { email, password } })
 
-// GET /api/users/me → UserRead (requires a valid token).
+// ── User ────────────────────────────────────────────────────────────────────
+
 export const fetchMe = (token) => apiFetch('/api/users/me', { token })
 
-// GET /api/users/me/reputation → ReputationRead (requires a valid token). Aggregated
-// reputation (rating, reviews, successful_trades, points, level, badges, history),
-// all derived from the user's real trades and reviews.
 export const fetchReputation = (token) => apiFetch('/api/users/me/reputation', { token })
 
-// GET /api/cards/album → [CardRead] (requires a valid token).
-// Full 994-card album in physical order, with the user's copy count per card.
+// ── Album ───────────────────────────────────────────────────────────────────
+
 export const fetchAlbum = (token) => apiFetch('/api/cards/album', { token })
 
-// PATCH /api/cards/album/:code → CardRead. Sets the absolute copy count
-// (0 = missing) for one card in the authenticated user's collection.
 export const updateCardCopies = (token, code, copies) =>
   apiFetch(`/api/cards/album/${code}`, { method: 'PATCH', token, body: { copies } })
 
-// GET /api/radar/matches → [MatchRead] (requires a valid token). Ranked trade
-// suggestions crossing the user's collection against nearby collectors, computed
-// server-side (the matching engine no longer runs in the browser).
+// ── Radar ───────────────────────────────────────────────────────────────────
+
+// GET /api/radar/matches → [MatchRead]
 export const fetchMatches = (token) => apiFetch('/api/radar/matches', { token })
 
-// GET /api/radar/matches/:collectorId → MatchRead (requires a valid token). The single
-// trade suggestion against one collector — the proposed swap that fills the negotiation
-// table. 404 when the collector isn't tradeable or no mutually beneficial trade exists.
-export const fetchMatch = (token, collectorId) =>
-  apiFetch(`/api/radar/matches/${collectorId}`, { token })
+// ── Trades: history (Perfil) ────────────────────────────────────────────────
 
-// POST /api/trades → TradeRead (requires a valid token). Persists a proposed swap from
-// the negotiation table. `iOffer`/`theyOffer` are arrays of album codes (e.g. "MEX2").
-export const createTrade = (token, { receiverId, iOffer, theyOffer }) =>
-  apiFetch('/api/trades/', {
-    method: 'POST',
-    token,
-    body: { receiver_id: receiverId, i_offer: iOffer, they_offer: theyOffer },
-  })
+// GET /api/trades → [TradeHistoryRead]
+export const fetchTrades = (token) => apiFetch('/api/trades/', { token })
 
-// PATCH /api/trades/:id/confirm → ContactRead (requires a valid token). Seals the trade
-// and reveals the partner's contact ({ name, phone, whatsapp, rating }) — by design the
-// contact is only available after confirming.
+// ── Trades: Matches inbox ───────────────────────────────────────────────────
+
+// GET /api/trades/matches → [MatchTradeRead]
+export const fetchTradeMatches = (token) => apiFetch('/api/trades/matches', { token })
+
+// ── Trades: invitation lifecycle ────────────────────────────────────────────
+
+// POST /api/trades → TradeRead. Creates an empty invitation from the Radar.
+export const createTrade = (token, { receiverId }) =>
+  apiFetch('/api/trades/', { method: 'POST', token, body: { receiver_id: receiverId } })
+
+// PATCH /api/trades/:id/accept → TradeDetailRead (receiver only, pending → negotiating)
+export const acceptTrade = (token, tradeId) =>
+  apiFetch(`/api/trades/${tradeId}/accept`, { method: 'PATCH', token })
+
+// PATCH /api/trades/:id/reject → 204 (receiver only, pending → cancelled)
+export const rejectTrade = (token, tradeId) =>
+  apiFetch(`/api/trades/${tradeId}/reject`, { method: 'PATCH', token })
+
+// ── Trades: negotiation table ───────────────────────────────────────────────
+
+// GET /api/trades/:id → TradeDetailRead
+export const fetchTrade = (token, tradeId) =>
+  apiFetch(`/api/trades/${tradeId}`, { token })
+
+// GET /api/trades/:id/catalog → CatalogRead
+export const fetchTradeCatalog = (token, tradeId) =>
+  apiFetch(`/api/trades/${tradeId}/catalog`, { token })
+
+// POST /api/trades/:id/items → TradeDetailRead. Add one of my spare cards.
+export const addTradeItem = (token, tradeId, code) =>
+  apiFetch(`/api/trades/${tradeId}/items`, { method: 'POST', token, body: { code } })
+
+// DELETE /api/trades/:id/items/:itemId → TradeDetailRead. Remove my committed card.
+export const removeTradeItem = (token, tradeId, itemId) =>
+  apiFetch(`/api/trades/${tradeId}/items/${itemId}`, { method: 'DELETE', token })
+
+// POST /api/trades/:id/suggestions → TradeDetailRead. Suggest a partner's spare.
+export const suggestTradeItem = (token, tradeId, code) =>
+  apiFetch(`/api/trades/${tradeId}/suggestions`, { method: 'POST', token, body: { code } })
+
+// PATCH /api/trades/:id/suggestions/:itemId/accept → TradeDetailRead.
+export const acceptSuggestion = (token, tradeId, itemId) =>
+  apiFetch(`/api/trades/${tradeId}/suggestions/${itemId}/accept`, { method: 'PATCH', token })
+
+// DELETE /api/trades/:id/suggestions/:itemId → 204.
+export const rejectSuggestion = (token, tradeId, itemId) =>
+  apiFetch(`/api/trades/${tradeId}/suggestions/${itemId}`, { method: 'DELETE', token })
+
+// ── Trades: mutual confirmation ─────────────────────────────────────────────
+
+// PATCH /api/trades/:id/confirm → TradeDetailRead. Sets the caller's confirm flag.
 export const confirmTrade = (token, tradeId) =>
   apiFetch(`/api/trades/${tradeId}/confirm`, { method: 'PATCH', token })
 
-// GET /api/trades → [TradeHistoryRead] (requires a valid token). The user's trade
-// history (partner, cromo count, status, the rating they left for each).
-export const fetchTrades = (token) => apiFetch('/api/trades/', { token })
+// PATCH /api/trades/:id/unconfirm → TradeDetailRead. Clears the caller's confirm flag.
+export const unconfirmTrade = (token, tradeId) =>
+  apiFetch(`/api/trades/${tradeId}/unconfirm`, { method: 'PATCH', token })
 
-// POST /api/reviews → ReviewRead (requires a valid token). Rates a confirmed trade
-// (user → collector); re-rating the same trade updates the existing review.
+// PATCH /api/trades/:id/demo-confirm → TradeDetailRead. Triggers the demo receiver's
+// confirm flag (called by a client-side timer ~2–3 s after the real user confirms).
+export const demoConfirmTrade = (token, tradeId) =>
+  apiFetch(`/api/trades/${tradeId}/demo-confirm`, { method: 'PATCH', token })
+
+// ── Reviews ─────────────────────────────────────────────────────────────────
+
 export const createReview = (token, { tradeId, rating, comment }) =>
   apiFetch('/api/reviews/', {
     method: 'POST',

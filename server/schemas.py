@@ -65,8 +65,8 @@ class MatchCollector(BaseModel):
     id: int
     username: str
     name: str
-    distance_km: float
-    rating: float           # reputation shown on the radar/negotiation (demo metadata)
+    distance_km: Optional[float] = None  # None for real users (geolocation is a later milestone)
+    rating: float           # reputation shown on the radar/negotiation
     successful_trades: int  # completed-trade count shown next to the rating
     demo: bool
 
@@ -81,11 +81,14 @@ class MatchRead(BaseModel):
 
 
 class TradeCreate(BaseModel):
-    """A proposed swap submitted from the negotiation table. Card lists are album
-    codes (e.g. MEX2); the server resolves them to ids and records who offers what."""
+    """An invitation to negotiate, sent from the radar. Starts empty — both sides build
+    their offers later on the live negotiation table."""
     receiver_id: int
-    i_offer: list[str]    # cards I give (offered_by = me)
-    they_offer: list[str]  # cards they give (offered_by = receiver)
+
+
+class TradeItemBody(BaseModel):
+    """One card to add to / suggest for an offer, by album code (e.g. MEX2)."""
+    code: str
 
 
 class TradeRead(BaseModel):
@@ -152,3 +155,68 @@ class ReputationRead(BaseModel):
     level: str              # derived level label
     badges: list[BadgeRead]
     history: list[TradeHistoryRead]
+
+
+class MatchTradePartner(BaseModel):
+    """The other party in a trade, as shown on the Matches inbox cards."""
+    id: int
+    username: str
+    name: str
+    rating: float
+    demo: bool
+
+
+class MatchTradeRead(BaseModel):
+    """One trade in the user's Matches inbox — pending invitations (sent/received),
+    trades being negotiated, and completed ones, with the committed cards on each side."""
+    id: int
+    direction: str          # 'sent' (I initiated) | 'received' (they invited me)
+    status: str             # pending | negotiating | completed | cancelled
+    created_at: datetime
+    partner: MatchTradePartner
+    i_offer: list[MatchSticker]    # what I give (committed)
+    they_offer: list[MatchSticker]  # what I get (committed)
+    i_confirmed: bool = False       # my confirm flag (during negotiating)
+    they_confirmed: bool = False    # the partner's confirm flag
+    contact: Optional[ContactRead] = None  # only on completed trades (privacy by design)
+
+
+class TradeItemRead(BaseModel):
+    """A single card on one side of the negotiation table, with its item id (for
+    remove/accept actions) and whether it's a committed offer or a pending suggestion."""
+    id: int
+    code: str
+    number: int
+    name: str
+    team: str
+    category: str
+    rarity: str
+    state: str  # committed | suggested
+
+
+class TradeDetailRead(BaseModel):
+    """Full live state of one negotiation table, from the caller's perspective."""
+    id: int
+    status: str             # pending | negotiating | completed | cancelled
+    role: str               # 'initiator' | 'receiver' — the caller's role
+    i_confirmed: bool       # the caller's confirm flag
+    they_confirmed: bool    # the partner's confirm flag
+    partner: MatchTradePartner
+    # Grouped by who gives the card: suggestions sit on the side of their would-be giver.
+    my_offer: list[TradeItemRead]     # cards I give (committed + suggestions made to me)
+    their_offer: list[TradeItemRead]  # cards the partner gives (committed + my suggestions)
+    contact: Optional[ContactRead] = None  # only when completed
+
+
+class CatalogSticker(MatchSticker):
+    """A spare card offerable on the negotiation table, tagged with whether the other
+    side actually needs it."""
+    useful: bool
+
+
+class CatalogRead(BaseModel):
+    """The add/suggest pickers for a negotiation table: my spares to add to my offer,
+    and the partner's spares I can suggest for theirs. Cards already on the table are
+    excluded."""
+    my_spares: list[CatalogSticker]
+    their_spares: list[CatalogSticker]

@@ -2,20 +2,24 @@ import { NavLink, Link, useNavigate } from 'react-router-dom'
 import Icon from './Icon'
 import Logo from './Logo'
 import { useAuth } from '../context/AuthContext'
+import { useMatches } from '../context/MatchesContext'
 
 // Primary navigation for the logged-in app shell. Active route is highlighted
 // in golden accent, matching the Stitch dashboard/radar mockups.
+// `badge` keys into the live counts resolved below (red dot for unseen invitations).
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
   { to: '/album', label: 'Álbum Digital', icon: 'menu_book' },
   { to: '/radar', label: 'Trade Radar', icon: 'radar' },
-  { to: '/negociacion', label: 'Mis Matches', icon: 'swap_horiz' },
+  { to: '/matches', label: 'Mis Matches', icon: 'swap_horiz', badge: 'matches' },
   { to: '/perfil', label: 'Comunidad', icon: 'group' },
 ]
 
 function Sidebar() {
   const { user, logout } = useAuth()
+  const { unseenCount } = useMatches()
   const navigate = useNavigate()
+  const badgeCounts = { matches: unseenCount }
 
   const onLogout = () => {
     logout()
@@ -47,22 +51,32 @@ function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
-        {NAV_ITEMS.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            className={({ isActive }) =>
-              `flex items-center gap-3 rounded-lg px-3 py-2.5 text-label-md transition-colors ${
-                isActive
-                  ? 'bg-secondary-container text-primary font-semibold'
-                  : 'text-primary-fixed-dim hover:bg-white/5 hover:text-white'
-              }`
-            }
-          >
-            <Icon name={item.icon} className="!text-[20px]" />
-            {item.label}
-          </NavLink>
-        ))}
+        {NAV_ITEMS.map((item) => {
+          const count = item.badge ? badgeCounts[item.badge] : 0
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-lg px-3 py-2.5 text-label-md transition-colors ${
+                  isActive
+                    ? 'bg-secondary-container text-primary font-semibold'
+                    : 'text-primary-fixed-dim hover:bg-white/5 hover:text-white'
+                }`
+              }
+            >
+              <span className="relative flex shrink-0">
+                <Icon name={item.icon} className="!text-[20px]" />
+                {count > 0 && (
+                  <span className="absolute -right-2 -top-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-error px-1 text-[10px] font-bold leading-none text-on-error">
+                    {count > 9 ? '9+' : count}
+                  </span>
+                )}
+              </span>
+              {item.label}
+            </NavLink>
+          )
+        })}
       </nav>
 
       {/* Footer actions */}

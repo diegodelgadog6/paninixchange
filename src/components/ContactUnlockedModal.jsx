@@ -20,7 +20,9 @@ function ContactUnlockedModal({ open, onClose, partner }) {
           <img src={partner.avatar} alt={partner.name} className="h-12 w-12 rounded-full object-cover" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-label-md text-primary">{partner.name}</p>
-            <p className="truncate text-label-sm text-on-surface-variant">{partner.phone}</p>
+            <p className="truncate text-label-sm text-on-surface-variant">
+              {partner.phone || 'Sin teléfono registrado'}
+            </p>
           </div>
           <span className="flex items-center gap-1 text-label-sm font-bold text-secondary">
             <Icon name="star" fill className="!text-[16px]" />
@@ -28,16 +30,23 @@ function ContactUnlockedModal({ open, onClose, partner }) {
           </span>
         </div>
 
-        {/* WhatsApp — href only; the real WhatsApp API integration goes here */}
-        <a
-          href={`https://wa.me/${partner.whatsapp}`}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#25D366] py-3 text-label-md font-bold text-white shadow-md transition-transform hover:scale-[1.02]"
-        >
-          <Icon name="chat" fill className="!text-[20px]" />
-          Abrir en WhatsApp
-        </a>
+        {/* WhatsApp — href only; the real WhatsApp API integration goes here.
+            Real users may not have a phone yet, so the button only shows when there is one. */}
+        {partner.whatsapp ? (
+          <a
+            href={`https://wa.me/${partner.whatsapp}`}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#25D366] py-3 text-label-md font-bold text-white shadow-md transition-transform hover:scale-[1.02]"
+          >
+            <Icon name="chat" fill className="!text-[20px]" />
+            Abrir en WhatsApp
+          </a>
+        ) : (
+          <p className="mt-4 w-full rounded-lg bg-surface-container px-4 py-3 text-center text-label-sm text-on-surface-variant">
+            Este coleccionista aún no registró un teléfono de contacto.
+          </p>
+        )}
         <button
           type="button"
           onClick={onClose}
