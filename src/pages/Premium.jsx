@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import TopNav from '../components/TopNav'
 import Footer from '../components/Footer'
 import Icon from '../components/Icon'
@@ -123,10 +123,15 @@ function PlanCard({ plan, yearly, onCheckout, loading, membershipCode }) {
 
 function Premium() {
   const [yearly, setYearly] = useState(false)
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user, refreshUser } = useAuth()
   const membershipCode = user?.membershipCode ?? 'free'
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { checkout, loading, error } = usePayment()
+
+  useEffect(() => {
+    if (searchParams.get('success') === '1') refreshUser()
+  }, [])
 
   function handleCheckout(plan) {
     if (!isAuthenticated) {
