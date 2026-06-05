@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
 import Logo from './Logo'
+import { useAuth } from '../context/AuthContext'
 
 // Public top navigation shell, used on the landing and premium pages.
 function TopNav() {
   const linkClass = 'text-on-surface-variant hover:text-primary transition-colors text-label-md'
+  const { isAuthenticated, user } = useAuth()
 
   return (
     <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-12 h-20 bg-surface/95 backdrop-blur-md border-b border-outline-variant/10">
@@ -18,18 +20,32 @@ function TopNav() {
       </nav>
 
       <div className="flex items-center gap-4">
-        <Link
-          to="/login"
-          className="px-6 py-2 text-primary text-label-md rounded hover:bg-primary/5 transition-all active:scale-[0.98]"
-        >
-          Iniciar sesión
-        </Link>
-        <Link
-          to="/register"
-          className="px-6 py-2 bg-primary text-on-primary rounded text-label-md hover:bg-primary/90 transition-all active:scale-[0.98]"
-        >
-          Crear cuenta
-        </Link>
+        {isAuthenticated ? (
+          <Link
+            to="/perfil"
+            className="flex items-center gap-2 px-4 py-2 rounded hover:bg-primary/5 transition-all"
+          >
+            <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center text-label-md font-bold uppercase">
+              {user?.username?.[0] ?? '?'}
+            </div>
+            <span className="text-label-md text-on-surface hidden sm:block">{user?.username}</span>
+          </Link>
+        ) : (
+          <>
+            <Link
+              to="/login"
+              className="px-6 py-2 text-primary text-label-md rounded hover:bg-primary/5 transition-all active:scale-[0.98]"
+            >
+              Iniciar sesión
+            </Link>
+            <Link
+              to="/register"
+              className="px-6 py-2 bg-primary text-on-primary rounded text-label-md hover:bg-primary/90 transition-all active:scale-[0.98]"
+            >
+              Crear cuenta
+            </Link>
+          </>
+        )}
       </div>
     </header>
   )

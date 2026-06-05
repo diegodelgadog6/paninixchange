@@ -1,7 +1,10 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import TopNav from '../components/TopNav'
 import Footer from '../components/Footer'
 import Icon from '../components/Icon'
+import { usePayment } from '../hooks/usePayment'
+import { useAuth } from '../context/AuthContext'
 
 // Pricing plans. In a real app these (and the price IDs) would come from Stripe.
 const PLANS = [
@@ -51,7 +54,7 @@ const PLANS = [
   },
 ]
 
-function PlanCard({ plan, yearly }) {
+function PlanCard({ plan, yearly, onCheckout, loading }) {
   const price = yearly ? plan.yearly : plan.monthly
   const period = yearly ? '/año' : '/mes'
 
@@ -96,21 +99,19 @@ function PlanCard({ plan, yearly }) {
         ))}
       </ul>
 
-      {/* Stripe Checkout would be initiated here, e.g.
-          stripe.redirectToCheckout({ lineItems: [{ price: plan.priceId, quantity: 1 }] })
-          The button is intentionally inert in this UI-only build. */}
       <button
         type="button"
-        disabled={plan.current}
+        disabled={plan.current || loading}
+        onClick={() => !plan.current && onCheckout(plan.id)}
         className={`w-full rounded-lg py-3 text-label-md font-bold transition-all active:scale-[0.98] ${
-          plan.current
+          plan.current || loading
             ? 'cursor-default border border-outline-variant/40 text-on-surface-variant'
             : plan.featured
               ? 'bg-secondary-container text-primary hover:bg-secondary-fixed'
               : 'bg-primary text-white hover:bg-primary-container'
         }`}
       >
-        {plan.cta}
+        {loading && !plan.current ? 'Redirigiendo…' : plan.cta}
       </button>
     </div>
   )
@@ -118,6 +119,17 @@ function PlanCard({ plan, yearly }) {
 
 function Premium() {
   const [yearly, setYearly] = useState(false)
+  const { isAuthenticated } = useAuth()
+  const navigate = useNavigate()
+  const { checkout, loading, error } = usePayment()
+
+  function handleCheckout(plan) {
+    if (!isAuthenticated) {
+      navigate('/login')
+      return
+    }
+    checkout(plan)
+  }
 
   return (
     <div className="min-h-screen bg-surface">
@@ -168,9 +180,13 @@ function Premium() {
         <section className="px-12 pb-16">
           <div className="mx-auto grid max-w-[1100px] grid-cols-1 items-center gap-6 md:grid-cols-3">
             {PLANS.map((plan) => (
-              <PlanCard key={plan.id} plan={plan} yearly={yearly} />
+              <PlanCard key={plan.id} plan={plan} yearly={yearly} onCheckout={handleCheckout} loading={loading} />
             ))}
           </div>
+
+          {error && (
+            <p className="mt-4 text-center text-label-md text-error">{error}</p>
+          )}
 
           {/* Trust strip */}
           <div className="mx-auto mt-10 flex max-w-[1100px] flex-wrap items-center justify-center gap-x-8 gap-y-3 text-label-md text-on-surface-variant">

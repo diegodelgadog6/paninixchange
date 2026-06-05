@@ -46,3 +46,7 @@ ALLOWED_ORIGINS: list[str] = [
     for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
     if origin.strip()
 ]
+
+# Stripe
+STRIPE_SECRET_KEY: str = os.getenv("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
