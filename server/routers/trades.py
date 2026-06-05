@@ -583,10 +583,7 @@ async def reject_suggestion(
         raise HTTPException(status_code=400, detail="Este ítem ya no es una sugerencia.")
 
     # Both the owner (reject) and the suggester (withdraw) can remove it.
-    partner = await _partner_of(trade, user, session)
-    if user.id not in (item.offered_by, partner.id):
-        raise HTTPException(status_code=403, detail="No puedes eliminar esta sugerencia.")
-
+    # _assert_participant above already guarantees user is one of the two trade participants.
     await session.delete(item)
     await session.commit()
 

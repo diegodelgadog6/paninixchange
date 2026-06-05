@@ -120,7 +120,7 @@ function OfferItemCard({ item, onRemove, onAccept, onReject, isMine, busy }) {
             Quitar
           </button>
         )}
-        {!isMine && isSuggested && (
+        {isMine && isSuggested && (
           <>
             <button
               type="button"
@@ -142,7 +142,7 @@ function OfferItemCard({ item, onRemove, onAccept, onReject, isMine, busy }) {
             </button>
           </>
         )}
-        {isMine && isSuggested && (
+        {!isMine && isSuggested && (
           <button
             type="button"
             onClick={() => onReject(item.id)}
