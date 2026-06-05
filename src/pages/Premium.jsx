@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import TopNav from '../components/TopNav'
 import Footer from '../components/Footer'
@@ -54,11 +54,10 @@ const PLANS = [
   },
 ]
 
-function PlanCard({ plan, yearly, onCheckout, loading, membershipCode }) {
-  const RANK = { free: 0, pro: 1, legend: 2, leyenda: 2 }
+function PlanCard({ plan, yearly, onAction, loading, membershipCode }) {
   const isCurrent = plan.id === membershipCode || (plan.id === 'legend' && membershipCode === 'leyenda')
-  const isLower = (RANK[plan.id] ?? 0) < (RANK[membershipCode] ?? 0)
-  const isDisabled = isCurrent || isLower || loading
+  const isCancelButton = plan.id === 'free' && membershipCode !== 'free'
+  const isDisabled = isCurrent || (!isCancelButton && loading)
   const price = yearly ? plan.yearly : plan.monthly
   const period = yearly ? '/año' : '/mes'
 
@@ -106,16 +105,18 @@ function PlanCard({ plan, yearly, onCheckout, loading, membershipCode }) {
       <button
         type="button"
         disabled={isDisabled}
-        onClick={() => !isDisabled && onCheckout(plan.id)}
+        onClick={() => !isDisabled && onAction(plan.id)}
         className={`w-full rounded-lg py-3 text-label-md font-bold transition-all active:scale-[0.98] ${
           isDisabled
             ? 'cursor-default border border-outline-variant/40 text-on-surface-variant'
-            : plan.featured
-              ? 'bg-secondary-container text-primary hover:bg-secondary-fixed'
-              : 'bg-primary text-white hover:bg-primary-container'
+            : isCancelButton
+              ? 'border border-error/40 text-error hover:bg-error/5'
+              : plan.featured
+                ? 'bg-secondary-container text-primary hover:bg-secondary-fixed'
+                : 'bg-primary text-white hover:bg-primary-container'
         }`}
       >
-        {isCurrent ? 'Plan actual' : isLower && plan.id === 'free' ? 'Cambiar a Gratis' : loading ? 'Redirigiendo…' : plan.cta}
+        {isCurrent ? 'Plan actual' : isCancelButton ? 'Cancelar suscripción' : plan.id === 'pro' && membershipCode === 'leyenda' ? 'Cambiar a Pro' : loading ? 'Redirigiendo…' : plan.cta}
       </button>
     </div>
   )
@@ -129,17 +130,32 @@ function Premium() {
   const [searchParams] = useSearchParams()
   const { checkout, loading, error } = usePayment()
 
+  const membershipCodeRef = useRef(membershipCode)
+  useEffect(() => { membershipCodeRef.current = membershipCode }, [membershipCode])
+  const refreshUserRef = useRef(refreshUser)
+  useEffect(() => { refreshUserRef.current = refreshUser }, [refreshUser])
+  const [isPolling, setIsPolling] = useState(false)
+
   useEffect(() => {
-    if (searchParams.get('success') === '1') refreshUser()
+    if (searchParams.get('success') !== '1') return
+    setIsPolling(true)
+    const initialCode = membershipCodeRef.current
+    let attempts = 0
+    const poll = setInterval(async () => {
+      attempts++
+      await refreshUserRef.current()
+      if (membershipCodeRef.current !== initialCode || attempts >= 6) {
+        clearInterval(poll)
+        setIsPolling(false)
+      }
+    }, 2000)
+    return () => { clearInterval(poll); setIsPolling(false) }
   }, [])
 
-  function handleCheckout(plan) {
-    if (!isAuthenticated) {
-      navigate('/login')
-      return
-    }
-    if (plan === 'free') return
-    checkout(plan)
+  function handleAction(planId) {
+    if (planId === 'free') { navigate('/perfil?config=1'); return }
+    if (!isAuthenticated) { navigate('/login'); return }
+    checkout(planId)
   }
 
   return (
@@ -189,9 +205,15 @@ function Premium() {
 
         {/* Pricing */}
         <section className="px-12 pb-16">
+          {isPolling && (
+            <div className="mx-auto mb-6 max-w-[1100px] flex items-center gap-3 rounded-xl bg-secondary-container/20 px-5 py-3 text-label-md text-primary">
+              <Icon name="sync" className="!text-[20px] animate-spin text-secondary" />
+              Procesando tu suscripción… esto puede tomar unos segundos.
+            </div>
+          )}
           <div className="mx-auto grid max-w-[1100px] grid-cols-1 items-center gap-6 md:grid-cols-3">
             {PLANS.map((plan) => (
-              <PlanCard key={plan.id} plan={plan} yearly={yearly} onCheckout={handleCheckout} loading={loading} membershipCode={membershipCode} />
+              <PlanCard key={plan.id} plan={plan} yearly={yearly} onAction={handleAction} loading={loading} membershipCode={membershipCode} />
             ))}
           </div>
 

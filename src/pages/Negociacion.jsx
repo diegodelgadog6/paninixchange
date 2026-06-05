@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Icon from '../components/Icon'
 import Spinner from '../components/Spinner'
@@ -314,6 +315,7 @@ function NegotiationNotice({ icon, title, children }) {
 
 function Negociacion() {
   const { tradeId } = useParams()
+  const [contactDismissed, setContactDismissed] = useState(false)
   const {
     trade,
     catalog,
@@ -366,8 +368,8 @@ function Negociacion() {
         </NegotiationNotice>
         {contact && (
           <ContactUnlockedModal
-            open
-            onClose={() => {}}
+            open={!contactDismissed}
+            onClose={() => setContactDismissed(true)}
             partner={contact}
           />
         )}

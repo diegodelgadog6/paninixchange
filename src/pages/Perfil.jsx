@@ -413,7 +413,6 @@ function ConfigModal({ open, onClose, user, token, onSaved }) {
   const [error, setError] = useState(null)
 
   const plan = user?.membershipCode ?? 'free'
-  const isPaid = plan !== 'free'
 
   const handleCancel = async () => {
     setCancelling(true)
@@ -453,29 +452,46 @@ function ConfigModal({ open, onClose, user, token, onSaved }) {
         </ul>
       </div>
 
-      {!confirmCancel ? (
-        <div className="flex flex-col gap-2">
-          {plan !== 'leyenda' && (
-            <button
-              type="button"
-              onClick={() => { onClose(); navigate('/premium') }}
-              className="w-full rounded-lg bg-primary py-2.5 text-label-md font-bold text-white hover:bg-primary/90 transition-colors"
-            >
-              {plan === 'free' ? 'Ver planes premium' : 'Mejorar a Leyenda'}
-            </button>
-          )}
-          {isPaid && (
-            <button
-              type="button"
-              onClick={() => setConfirmCancel(true)}
-              className="w-full rounded-lg border border-error/40 py-2.5 text-label-md text-error hover:bg-error/5 transition-colors"
-            >
-              Cancelar suscripción
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="rounded-xl border border-error/30 bg-error/5 p-4">
+      <div className="flex flex-col gap-2">
+        {plan === 'free' && (
+          <button
+            type="button"
+            onClick={() => { onClose(); navigate('/premium') }}
+            className="w-full rounded-lg bg-primary py-2.5 text-label-md font-bold text-white hover:bg-primary/90 transition-colors"
+          >
+            Ver planes
+          </button>
+        )}
+        {plan === 'pro' && (
+          <button
+            type="button"
+            onClick={() => { onClose(); navigate('/premium') }}
+            className="w-full rounded-lg bg-primary py-2.5 text-label-md font-bold text-white hover:bg-primary/90 transition-colors"
+          >
+            Mejorar a Leyenda
+          </button>
+        )}
+        {plan === 'leyenda' && (
+          <button
+            type="button"
+            onClick={() => { onClose(); navigate('/premium') }}
+            className="w-full rounded-lg bg-primary py-2.5 text-label-md font-bold text-white hover:bg-primary/90 transition-colors"
+          >
+            Cambiar a Pro
+          </button>
+        )}
+        {plan !== 'free' && !confirmCancel && (
+          <button
+            type="button"
+            onClick={() => setConfirmCancel(true)}
+            className="w-full rounded-lg border border-error/40 py-2.5 text-label-md text-error hover:bg-error/5 transition-colors"
+          >
+            Cancelar suscripción
+          </button>
+        )}
+      </div>
+      {confirmCancel && (
+        <div className="mt-2 rounded-xl border border-error/30 bg-error/5 p-4">
           <p className="mb-1 text-label-md font-bold text-error">
             ¿Cancelar tu suscripción {PLAN_LABELS[plan]}?
           </p>
