@@ -36,7 +36,6 @@ function toMatch(match) {
       name: match.collector.name,
       avatar: collectorAvatar(match.collector.name),
       distanceKm: match.collector.distance_km,
-      demo: match.collector.demo,
     },
     theyOffer: match.they_offer.map(toSticker),
     iOffer: match.i_offer.map(toSticker),

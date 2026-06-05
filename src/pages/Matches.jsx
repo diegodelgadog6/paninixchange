@@ -43,11 +43,6 @@ function PartnerHeader({ partner }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <h3 className="truncate text-label-md text-on-surface">{partner.name}</h3>
-          {partner.demo && (
-            <span className="shrink-0 rounded border border-outline-variant/50 px-1.5 py-0.5 text-[9px] font-bold uppercase text-on-surface-variant">
-              Prueba
-            </span>
-          )}
         </div>
         <span className="flex items-center gap-1 text-label-sm text-on-surface-variant">
           <Icon name="star" fill className="!text-[14px] text-secondary" />

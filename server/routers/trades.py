@@ -6,10 +6,8 @@ from sqlmodel import select
 
 from database import get_session
 from deps import get_current_user
-from data.collectors import whatsapp_digits
-from matching import collector_meta, copies_for, is_demo, spares_catalog, sticker
+from matching import collector_meta, copies_for, spares_catalog, sticker
 from models.card import Card
-from models.review import Review
 from models.trade import Trade, TradeItem
 from models.user import User
 from reputation import build_history
@@ -39,15 +37,20 @@ INBOX_STATUSES = ("pending", "negotiating", "completed")
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _whatsapp_digits(phone: str) -> str:
+    """Digits-only form of a phone number, for building a wa.me link."""
+    return "".join(ch for ch in phone if ch.isdigit())
+
+
 async def _contact_for(session: AsyncSession, partner: User) -> ContactRead:
     """Contact revealed ONLY when a trade is completed — privacy by design.
-    Demo collectors carry a fixed phone; real users may have none yet."""
+    A real user may not have a phone on file yet (then whatsapp is empty)."""
     meta = await collector_meta(session, partner)
     phone = partner.phone or ""
     return ContactRead(
         name=meta["name"],
         phone=phone,
-        whatsapp=whatsapp_digits(phone) if phone else "",
+        whatsapp=_whatsapp_digits(phone) if phone else "",
         rating=meta["rating"],
     )
 
@@ -116,7 +119,6 @@ async def _build_detail(
             username=partner.username,
             name=meta["name"],
             rating=meta["rating"],
-            demo=meta["demo"],
         ),
         my_offer=my_offer,
         their_offer=their_offer,
@@ -124,39 +126,14 @@ async def _build_detail(
     )
 
 
-async def _try_complete(
-    session: AsyncSession, trade: Trade, partner: User, user: User
-) -> bool:
-    """If both flags are set, seal the trade and seed the demo review. Returns True
-    when the trade just completed."""
+async def _try_complete(session: AsyncSession, trade: Trade) -> bool:
+    """If both flags are set, seal the trade. Returns True when it just completed.
+    Each party rates the other afterwards through the normal review flow."""
     if not (trade.initiator_confirmed and trade.receiver_confirmed):
         return False
 
     trade.status = "completed"
     session.add(trade)
-
-    # Auto-review: the demo collector rates the real user once — seeds initial reputation.
-    initiator = await session.get(User, trade.initiator_id)
-    receiver = await session.get(User, trade.receiver_id)
-    if initiator and receiver:
-        demo_party = receiver if is_demo(receiver) else (initiator if is_demo(initiator) else None)
-        real_party = initiator if demo_party is receiver else (receiver if demo_party is initiator else None)
-        if demo_party and real_party:
-            exists = (await session.execute(
-                select(Review).where(
-                    Review.trade_id == trade.id,
-                    Review.rater_id == demo_party.id,
-                )
-            )).scalars().first()
-            if exists is None:
-                meta = await collector_meta(session, demo_party)
-                session.add(Review(
-                    trade_id=trade.id,
-                    rater_id=demo_party.id,
-                    ratee_id=real_party.id,
-                    rating=round(meta["rating"]),
-                ))
-
     await session.commit()
     return True
 
@@ -251,7 +228,6 @@ async def list_match_trades(
                 username=partner.username if partner else "—",
                 name=meta.get("name", partner.username if partner else "—"),
                 rating=meta.get("rating", 0.0),
-                demo=meta.get("demo", False),
             ),
             i_offer=i_offer,
             they_offer=they_offer,
@@ -273,7 +249,7 @@ async def create_trade(
     session: AsyncSession = Depends(get_session),
 ):
     """Create an empty invitation to negotiate. The receiver sees it in their inbox and
-    accepts or rejects. Demo receivers are moved straight to negotiating (instant accept).
+    accepts or rejects.
     Duplicates are rejected: only one active invitation per pair at a time."""
     if payload.receiver_id == user.id:
         raise HTTPException(status_code=400, detail="No puedes intercambiar contigo mismo.")
@@ -297,13 +273,10 @@ async def create_trade(
             detail="Ya tienes una negociación activa con este coleccionista.",
         )
 
-    # Demo collectors accept instantly — create already in negotiating.
-    initial_status = "negotiating" if is_demo(receiver) else "pending"
-
     trade = Trade(
         initiator_id=user.id,
         receiver_id=receiver.id,
-        status=initial_status,
+        status="pending",
         expires_at=datetime.utcnow() + TRADE_TTL,
     )
     session.add(trade)
@@ -518,9 +491,8 @@ async def suggest_item(
 ):
     """Suggest a spare card from the partner's repertoire for their offer.
 
-    For demo partners, suggestions are accepted immediately (auto-commit) and DO reset
-    confirmations because they immediately change the committed offer. For real partners,
-    the suggestion waits for their explicit accept — confirmations are not touched."""
+    The suggestion waits for the partner's explicit accept before it counts toward the
+    committed offer, so confirmations are not touched here."""
     trade = await session.get(Trade, trade_id)
     if trade is None:
         raise HTTPException(status_code=404, detail="Intercambio no encontrado.")
@@ -552,20 +524,12 @@ async def suggest_item(
     if dup is not None:
         raise HTTPException(status_code=400, detail="Este cromo ya está en la mesa.")
 
-    partner_is_demo = is_demo(partner)
-    new_state = "committed" if partner_is_demo else "suggested"
-
     session.add(TradeItem(
         trade_id=trade_id,
         card_id=card.id,
         offered_by=partner.id,
-        state=new_state,
+        state="suggested",
     ))
-    if partner_is_demo:
-        # Auto-accepted → changes the real offer, so reset flags.
-        _clear_confirmations(trade)
-        session.add(trade)
-
     await session.commit()
     return await _build_detail(session, trade, user)
 
@@ -675,7 +639,7 @@ async def confirm_trade(
     session.add(trade)
     await session.flush()
 
-    await _try_complete(session, trade, partner, user)
+    await _try_complete(session, trade)
     await session.commit()
     return await _build_detail(session, trade, user)
 
@@ -699,39 +663,5 @@ async def unconfirm_trade(
     else:
         trade.receiver_confirmed = False
     session.add(trade)
-    await session.commit()
-    return await _build_detail(session, trade, user)
-
-
-@router.patch("/{trade_id}/demo-confirm", response_model=TradeDetailRead)
-async def demo_confirm_trade(
-    trade_id: int,
-    user: User = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session),
-):
-    """Sets the demo receiver's confirm flag on behalf of the initiator's client.
-
-    The frontend fires this ~2–3 s after the real user confirms, so the close feels like
-    a real two-party interaction. Only valid when the receiver is a demo collector."""
-    trade = await session.get(Trade, trade_id)
-    if trade is None:
-        raise HTTPException(status_code=404, detail="Intercambio no encontrado.")
-    if trade.initiator_id != user.id:
-        raise HTTPException(status_code=403, detail="Solo el iniciador puede ejecutar esta acción.")
-    if trade.status != "negotiating":
-        raise HTTPException(status_code=400, detail="El intercambio no está en negociación.")
-
-    receiver = await session.get(User, trade.receiver_id)
-    if receiver is None or not is_demo(receiver):
-        raise HTTPException(
-            status_code=400,
-            detail="Este endpoint solo aplica a coleccionistas demo.",
-        )
-
-    trade.receiver_confirmed = True
-    session.add(trade)
-    await session.flush()
-
-    await _try_complete(session, trade, receiver, user)
     await session.commit()
     return await _build_detail(session, trade, user)

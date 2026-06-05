@@ -2,12 +2,11 @@
 
 Holds the match computation (ported from the original client engine in
 src/data/matches.js) and `collector_meta`, the single place that resolves the display
-metadata for a trade partner — demo collector or real registered user."""
+metadata for a trade partner."""
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from data.collectors import DEMO_COLLECTORS
 from models.card import Card, UserCard
 from models.review import Review
 from models.trade import Trade
@@ -25,33 +24,12 @@ async def copies_for(session: AsyncSession, user_id: int) -> dict[int, int]:
     }
 
 
-def is_demo(user: User) -> bool:
-    """Whether a user is one of the seeded demo collectors (no real client of its own)."""
-    return _demo_meta(user) is not None
-
-
-def _demo_meta(user: User) -> dict | None:
-    """The demo metadata row for a user, or None if they aren't a seeded demo collector."""
-    return next((d for d in DEMO_COLLECTORS if d["username"] == user.username), None)
-
-
 async def collector_meta(session: AsyncSession, user: User) -> dict:
     """Display metadata for a trade partner — `name`, `distance_km`, `rating`,
-    `successful_trades`, `demo`.
+    `successful_trades`.
 
-    Demo collectors carry fixed metadata in DEMO_COLLECTORS. Real users derive their
-    rating/trades from real activity (same aggregation as build_reputation) and have no
-    distance yet (geolocation is a later milestone)."""
-    demo = _demo_meta(user)
-    if demo is not None:
-        return {
-            "name": demo["name"],
-            "distance_km": demo["distance_km"],
-            "rating": demo["rating"],
-            "successful_trades": demo["successful_trades"],
-            "demo": True,
-        }
-
+    Rating and completed-trade count are derived from real activity (same aggregation as
+    build_reputation). Distance is None until geolocation lands (a later milestone)."""
     received = (await session.execute(
         select(Review.rating).where(Review.ratee_id == user.id)
     )).scalars().all()
@@ -69,7 +47,6 @@ async def collector_meta(session: AsyncSession, user: User) -> dict:
         "distance_km": None,
         "rating": rating,
         "successful_trades": successful,
-        "demo": False,
     }
 
 
@@ -145,7 +122,6 @@ def compute_match(
             distance_km=meta["distance_km"],
             rating=meta["rating"],
             successful_trades=meta["successful_trades"],
-            demo=meta["demo"],
         ),
         they_offer=they_offer,
         i_offer=i_offer,

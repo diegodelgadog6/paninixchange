@@ -65,10 +65,9 @@ class MatchCollector(BaseModel):
     id: int
     username: str
     name: str
-    distance_km: Optional[float] = None  # None for real users (geolocation is a later milestone)
+    distance_km: Optional[float] = None  # None until geolocation lands (a later milestone)
     rating: float           # reputation shown on the radar/negotiation
     successful_trades: int  # completed-trade count shown next to the rating
-    demo: bool
 
 
 class MatchRead(BaseModel):
@@ -163,7 +162,6 @@ class MatchTradePartner(BaseModel):
     username: str
     name: str
     rating: float
-    demo: bool
 
 
 class MatchTradeRead(BaseModel):

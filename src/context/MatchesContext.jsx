@@ -34,7 +34,6 @@ function toTrade(t) {
       name: t.partner.name,
       avatar,
       rating: t.partner.rating,
-      demo: t.partner.demo,
     },
     iOffer: t.i_offer,
     theyOffer: t.they_offer,
