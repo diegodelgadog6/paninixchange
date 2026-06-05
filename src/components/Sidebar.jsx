@@ -44,8 +44,8 @@ function Sidebar() {
           className="h-9 w-9 rounded-full border-2 border-secondary-container object-cover"
         />
         <div className="leading-tight">
-          <p className="text-label-md text-secondary-container">{user.membership}</p>
-          <p className="text-label-sm text-on-primary-container">Collector Profile</p>
+          <p className="text-label-md font-semibold text-white">{user.name}</p>
+          <p className="text-label-sm text-secondary-container">{user.membership}</p>
         </div>
       </Link>
 

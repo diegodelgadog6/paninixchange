@@ -15,6 +15,7 @@ class UserUpdate(BaseModel):
     username: Optional[str] = None
     email: Optional[EmailStr] = None
     password: Optional[str] = None
+    phone: Optional[str] = None
 
 
 class LoginRequest(BaseModel):

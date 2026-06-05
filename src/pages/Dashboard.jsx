@@ -12,6 +12,7 @@ import { useRadarMatches } from '../context/RadarContext'
 // Collector hub. Lives inside AppLayout (sidebar + ml-64 main).
 function Dashboard() {
   const { user } = useAuth()
+  const membershipCode = user?.membershipCode ?? 'free'
   const { stickers, stats, loading } = useCollection()
   const firstName = user.name.split(' ')[0]
   const progress = stats.total ? Math.round((stats.owned / stats.total) * 100) : 0
@@ -98,24 +99,26 @@ function Dashboard() {
                 )}
               </div>
 
-              {/* Premium promo */}
-              <div className="mt-8">
-                <div className="group relative overflow-hidden rounded-xl bg-secondary-container p-6">
-                  <div className="relative z-10">
-                    <h4 className="mb-2 text-headline-md text-primary">Trade Radar Pro</h4>
-                    <p className="mb-4 text-label-md text-on-secondary-container">
-                      Encuentra matches a 5km de distancia automáticamente.
-                    </p>
-                    <Link
-                      to="/premium"
-                      className="inline-block rounded bg-primary px-4 py-2 text-label-md text-white shadow-sm transition-transform group-hover:scale-105"
-                    >
-                      Explorar Pro
-                    </Link>
+              {/* Premium promo — hidden for Leyenda members */}
+              {membershipCode !== 'leyenda' && (
+                <div className="mt-8">
+                  <div className="group relative overflow-hidden rounded-xl bg-secondary-container p-6">
+                    <div className="relative z-10">
+                      <h4 className="mb-2 text-headline-md text-primary">Trade Radar Pro</h4>
+                      <p className="mb-4 text-label-md text-on-secondary-container">
+                        Encuentra matches a 5km de distancia automáticamente.
+                      </p>
+                      <Link
+                        to="/premium"
+                        className="inline-block rounded bg-primary px-4 py-2 text-label-md text-white shadow-sm transition-transform group-hover:scale-105"
+                      >
+                        {membershipCode === 'pro' ? 'Explorar Leyenda' : 'Explorar Pro'}
+                      </Link>
+                    </div>
+                    <Icon name="radar" className="absolute -bottom-4 -right-4 rotate-12 !text-[128px] text-primary/10" />
                   </div>
-                  <Icon name="radar" className="absolute -bottom-4 -right-4 rotate-12 !text-[128px] text-primary/10" />
                 </div>
-              </div>
+              )}
             </div>
           </aside>
         </div>

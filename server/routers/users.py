@@ -37,6 +37,8 @@ async def update_me(
         current_user.email = data.email
     if data.password is not None:
         current_user.hashed_password = hash_password(data.password)
+    if data.phone is not None:
+        current_user.phone = data.phone
     session.add(current_user)
     await session.commit()
     await session.refresh(current_user)
