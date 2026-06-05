@@ -3,7 +3,7 @@ import { useRadarMatches } from '../context/RadarContext'
 
 // Manages the full Trade Radar state: location search config persisted to localStorage,
 // setup modal visibility, delete confirmation, and live-filtered match list.
-// Real app: search.city/radius would come from a user profile setting via PATCH /api/me.
+// search shape: { city, radius, lat, lng }
 
 const STORAGE_KEY = 'pxc:radar-search'
 
@@ -16,26 +16,18 @@ function loadSearch() {
   }
 }
 
-// TODO: Google Maps integration — replace city text input with a navigable map.
-//   GPS path: navigator.geolocation.getCurrentPosition() pre-fills the map pin.
-//   Manual path: map loads centered on the Americas, user drags pin to desired spot.
-
 export function useRadar() {
   const { matches: allMatches, loading, refresh } = useRadarMatches()
-  const [search, setSearch] = useState(loadSearch)   // { city, radius } | null
+  const [search, setSearch] = useState(loadSearch)
   const [showSetup, setShowSetup] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  // Re-fetch on entry so suggestions reflect any album edits made since last visit
-  // (the engine is server-side; the provider only fetched once on shell mount).
   useEffect(() => {
     refresh()
   }, [refresh])
 
   const hasLocation = search !== null
 
-  // Demo collectors are filtered by the chosen radius; real community members have no
-  // distance yet (geolocation is a later milestone), so they're always shown.
   const visible = useMemo(
     () =>
       search
@@ -47,6 +39,7 @@ export function useRadar() {
   )
 
   function confirmSearch(newSearch) {
+    // newSearch includes { city, radius, lat, lng }
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(newSearch))
     setSearch(newSearch)
     setShowSetup(false)
