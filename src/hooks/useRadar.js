@@ -34,8 +34,15 @@ export function useRadar() {
 
   const hasLocation = search !== null
 
+  // Demo collectors are filtered by the chosen radius; real community members have no
+  // distance yet (geolocation is a later milestone), so they're always shown.
   const visible = useMemo(
-    () => (search ? allMatches.filter((m) => m.collector.distanceKm <= search.radius) : []),
+    () =>
+      search
+        ? allMatches.filter(
+            (m) => m.collector.distanceKm == null || m.collector.distanceKm <= search.radius,
+          )
+        : [],
     [allMatches, search],
   )
 

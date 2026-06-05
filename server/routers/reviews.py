@@ -18,14 +18,14 @@ async def create_review(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    """Rate a confirmed trade (user → collector). The user must own the trade and it
-    must be confirmed. Re-rating the same trade updates the existing review."""
+    """Rate a completed trade (user → collector). The user must own the trade and it
+    must be completed. Re-rating the same trade updates the existing review."""
     trade = await session.get(Trade, payload.trade_id)
     if trade is None or trade.initiator_id != user.id:
         raise HTTPException(status_code=404, detail="Intercambio no encontrado.")
-    if trade.status != "confirmed":
+    if trade.status != "completed":
         raise HTTPException(
-            status_code=400, detail="Solo puedes calificar un intercambio confirmado."
+            status_code=400, detail="Solo puedes calificar un intercambio completado."
         )
 
     review = (await session.execute(

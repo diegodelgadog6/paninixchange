@@ -108,7 +108,7 @@ async def build_reputation(session: AsyncSession, user_id: int) -> ReputationRea
 
     successful = (await session.execute(
         select(func.count()).select_from(Trade).where(
-            Trade.status == "confirmed",
+            Trade.status == "completed",
             (Trade.initiator_id == user_id) | (Trade.receiver_id == user_id),
         )
     )).scalar_one()

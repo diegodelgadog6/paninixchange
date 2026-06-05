@@ -7,6 +7,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import { AuthProvider } from './context/AuthContext'
 import { CollectionProvider } from './context/CollectionContext'
 import { RadarProvider } from './context/RadarContext'
+import { MatchesProvider } from './context/MatchesContext'
 import Landing from './pages/Landing'
 import Premium from './pages/Premium'
 import Login from './pages/Login'
@@ -15,6 +16,7 @@ import Dashboard from './pages/Dashboard'
 import Album from './pages/Album'
 import Radar from './pages/Radar'
 import Negociacion from './pages/Negociacion'
+import Matches from './pages/Matches'
 import Perfil from './pages/Perfil'
 
 createRoot(document.getElementById('root')).render(
@@ -34,7 +36,9 @@ createRoot(document.getElementById('root')).render(
               element={
                 <CollectionProvider>
                   <RadarProvider>
-                    <AppLayout />
+                    <MatchesProvider>
+                      <AppLayout />
+                    </MatchesProvider>
                   </RadarProvider>
                 </CollectionProvider>
               }
@@ -42,8 +46,8 @@ createRoot(document.getElementById('root')).render(
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/album" element={<Album />} />
               <Route path="/radar" element={<Radar />} />
-              <Route path="/negociacion" element={<Negociacion />} />
-              <Route path="/negociacion/:collectorId" element={<Negociacion />} />
+              <Route path="/negociacion/:tradeId" element={<Negociacion />} />
+              <Route path="/matches" element={<Matches />} />
               <Route path="/perfil" element={<Perfil />} />
             </Route>
           </Route>

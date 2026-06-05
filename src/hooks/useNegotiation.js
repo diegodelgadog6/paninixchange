@@ -1,121 +1,153 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { confirmTrade, createTrade, fetchMatch } from '../lib/api'
-import { toContact, toNegotiation } from '../data/negotiation'
+import {
+  acceptSuggestion,
+  addTradeItem,
+  confirmTrade,
+  demoConfirmTrade,
+  fetchTrade,
+  fetchTradeCatalog,
+  rejectSuggestion,
+  removeTradeItem,
+  suggestTradeItem,
+  unconfirmTrade,
+} from '../lib/api'
 
-const STICKER_VALUE = { legend: 5, gold: 4, base: 2 }
+const POLL_MS = 3500  // live polling interval while on the table
+const DEMO_CONFIRM_DELAY = 2500  // ms after user confirms before demo seals the trade
 
-function computeBalance(youOffer, theyOffer) {
-  const sum = (list) => list.reduce((acc, s) => acc + (STICKER_VALUE[s.rarity] ?? 0), 0)
-  const diff = sum(theyOffer) - sum(youOffer) // positive = you receive more
-  if (diff >= 2) return 'favorable'
-  if (diff <= -2) return 'sacrificio'
-  return 'justo'
-}
-
-function parseTime(mmss) {
-  const [m, s] = mmss.split(':').map(Number)
-  return m * 60 + s
-}
-
-function formatTime(sec) {
-  const m = Math.floor(sec / 60).toString().padStart(2, '0')
-  const s = (sec % 60).toString().padStart(2, '0')
-  return `${m}:${s}`
-}
-
-// Drives the negotiation table for one collector. Hydrates the proposed swap from
-// GET /api/radar/matches/:collectorId (the same engine the radar uses), then keeps the
-// offers editable, the expiry counting down, and the confirm/contact modals in sync.
-export function useNegotiation(collectorId) {
+// Drives the live negotiation table for one trade (identified by tradeId).
+// Hydrates from GET /api/trades/:id and keeps the table state in sync via polling.
+export function useNegotiation(tradeId) {
   const { token } = useAuth()
-  const [partner, setPartner] = useState(null)
-  const [secondsLeft, setSecondsLeft] = useState(0)
-  const [youOffer, setYouOffer] = useState([])
-  const [theyOffer, setTheyOffer] = useState([])
+  const [trade, setTrade] = useState(null)
+  const [catalog, setCatalog] = useState(null)
+  const [catalogOpen, setCatalogOpen] = useState(null)  // 'mine' | 'theirs' | null
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [confirmOpen, setConfirmOpen] = useState(false)
-  const [contactOpen, setContactOpen] = useState(false)
-  const [confirming, setConfirming] = useState(false)
-  const [confirmError, setConfirmError] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [actionError, setActionError] = useState(null)
+  const demoConfirming = useRef(false)
 
-  useEffect(() => {
-    if (!token || !collectorId) return undefined
-    let cancelled = false
-    fetchMatch(token, collectorId)
-      .then((match) => {
-        if (cancelled) return
-        const data = toNegotiation(match)
-        setPartner(data.partner)
-        setYouOffer(data.youOffer)
-        setTheyOffer(data.theyOffer)
-        setSecondsLeft(parseTime(data.expiresIn))
-        setError(null)
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err.message)
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [token, collectorId])
-
-  useEffect(() => {
-    if (secondsLeft <= 0) return
-    const id = setInterval(() => setSecondsLeft((s) => s - 1), 1000)
-    return () => clearInterval(id)
-  }, [secondsLeft])
-
-  const balance = useMemo(() => computeBalance(youOffer, theyOffer), [youOffer, theyOffer])
-  const canConfirm = youOffer.length > 0 && theyOffer.length > 0
-
-  const removeFromYou = (id) => setYouOffer((list) => list.filter((s) => s.id !== id))
-  const removeFromThem = (id) => setTheyOffer((list) => list.filter((s) => s.id !== id))
-
-  // Persist the proposed swap, seal it, and reveal the partner's real contact.
-  // Sends the offered cards by their album codes (the offer-card ids).
-  const handleConfirm = async () => {
-    if (confirming) return
-    setConfirming(true)
-    setConfirmError(null)
+  const loadTrade = useCallback(async () => {
+    if (!token || !tradeId) return
     try {
-      const trade = await createTrade(token, {
-        receiverId: collectorId,
-        iOffer: youOffer.map((s) => s.id),
-        theyOffer: theyOffer.map((s) => s.id),
-      })
-      const contact = await confirmTrade(token, trade.id)
-      setPartner((p) => ({ ...p, ...toContact(contact) }))
-      setConfirmOpen(false)
-      setContactOpen(true)
+      const data = await fetchTrade(token, tradeId)
+      setTrade(data)
+      setError(null)
     } catch (err) {
-      setConfirmError(err.message)
+      setError(err.message)
     } finally {
-      setConfirming(false)
+      setLoading(false)
     }
-  }
+  }, [token, tradeId])
+
+  // Initial load + polling while the table is open.
+  // The effect schedules the async call; setState only fires inside the async callbacks.
+  useEffect(() => {
+    const run = () => { loadTrade() }
+    run()
+    const id = setInterval(run, POLL_MS)
+    return () => clearInterval(id)
+  }, [loadTrade])
+
+  // Refetch on tab focus (two-tab testing).
+  useEffect(() => {
+    window.addEventListener('focus', loadTrade)
+    return () => window.removeEventListener('focus', loadTrade)
+  }, [loadTrade])
+
+  // Demo auto-confirm: ~2.5 s after the user confirms, fire demo-confirm so the trade
+  // seals and feels like a real two-party close.
+  useEffect(() => {
+    if (!trade) return
+    if (trade.status !== 'negotiating') return
+    if (!trade.i_confirmed) return
+    const partnerIsDemo = trade.partner?.demo
+    if (!partnerIsDemo) return
+    if (demoConfirming.current) return
+    demoConfirming.current = true
+    const timer = setTimeout(async () => {
+      try {
+        const updated = await demoConfirmTrade(token, tradeId)
+        setTrade(updated)
+      } catch {
+        // ignore — the next poll will pick up any state change
+      }
+    }, DEMO_CONFIRM_DELAY)
+    return () => clearTimeout(timer)
+  }, [trade, token, tradeId])
+
+  const loadCatalog = useCallback(async () => {
+    if (!token || !tradeId) return
+    try {
+      const data = await fetchTradeCatalog(token, tradeId)
+      setCatalog(data)
+    } catch {
+      setCatalog(null)
+    }
+  }, [token, tradeId])
+
+  const openCatalog = useCallback(async (side) => {
+    setCatalogOpen(side)
+    await loadCatalog()
+  }, [loadCatalog])
+
+  const closeCatalog = useCallback(() => setCatalogOpen(null), [])
+
+  // Wraps an action call: shows busy, clears errors, refreshes table + catalog after.
+  const act = useCallback(async (fn) => {
+    setBusy(true)
+    setActionError(null)
+    try {
+      const updated = await fn()
+      if (updated) setTrade(updated)
+      await loadCatalog()
+    } catch (err) {
+      setActionError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }, [loadCatalog])
+
+  const addItem = useCallback((code) =>
+    act(() => addTradeItem(token, tradeId, code)), [act, token, tradeId])
+
+  const removeItem = useCallback((itemId) =>
+    act(() => removeTradeItem(token, tradeId, itemId)), [act, token, tradeId])
+
+  const suggestItem = useCallback((code) =>
+    act(() => suggestTradeItem(token, tradeId, code)), [act, token, tradeId])
+
+  const acceptSugg = useCallback((itemId) =>
+    act(() => acceptSuggestion(token, tradeId, itemId)), [act, token, tradeId])
+
+  const rejectSugg = useCallback((itemId) =>
+    act(async () => { await rejectSuggestion(token, tradeId, itemId); await loadTrade() }),
+    [act, loadTrade, token, tradeId])
+
+  const confirm = useCallback(() =>
+    act(() => confirmTrade(token, tradeId)), [act, token, tradeId])
+
+  const unconfirm = useCallback(() =>
+    act(() => unconfirmTrade(token, tradeId)), [act, token, tradeId])
 
   return {
+    trade,
+    catalog,
+    catalogOpen,
     loading,
     error,
-    partner,
-    timeLeft: formatTime(secondsLeft),
-    youOffer,
-    theyOffer,
-    confirmOpen,
-    contactOpen,
-    confirming,
-    confirmError,
-    balance,
-    canConfirm,
-    removeFromYou,
-    removeFromThem,
-    setConfirmOpen,
-    setContactOpen,
-    handleConfirm,
+    busy,
+    actionError,
+    openCatalog,
+    closeCatalog,
+    addItem,
+    removeItem,
+    suggestItem,
+    acceptSugg,
+    rejectSugg,
+    confirm,
+    unconfirm,
   }
 }
