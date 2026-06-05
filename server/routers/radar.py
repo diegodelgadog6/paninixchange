@@ -52,7 +52,7 @@ async def get_matches(
 
     matches: list[MatchRead] = []
     for collector in collectors:
-        meta = await collector_meta(session, collector)
+        meta = await collector_meta(session, collector, user)
         match = compute_match(
             cards, my_copies, collector, meta, copies_by_user.get(collector.id, {})
         )
@@ -85,7 +85,7 @@ async def get_match(
     my_copies = await copies_for(session, user.id)
     their_copies = await copies_for(session, collector.id)
 
-    meta = await collector_meta(session, collector)
+    meta = await collector_meta(session, collector, user)
     match = compute_match(cards, my_copies, collector, meta, their_copies)
     if match is None:
         raise HTTPException(

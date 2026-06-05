@@ -39,6 +39,14 @@ async def update_me(
         current_user.hashed_password = hash_password(data.password)
     if data.phone is not None:
         current_user.phone = data.phone
+    # location, lat and lng allow explicit null (to clear them), so check model_fields_set
+    # rather than `is not None` — that distinguishes "omitted" from "set to null".
+    if "location" in data.model_fields_set:
+        current_user.location = data.location
+    if "lat" in data.model_fields_set:
+        current_user.lat = data.lat
+    if "lng" in data.model_fields_set:
+        current_user.lng = data.lng
     session.add(current_user)
     await session.commit()
     await session.refresh(current_user)

@@ -16,6 +16,9 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     password: Optional[str] = None
     phone: Optional[str] = None
+    location: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
 
 
 class LoginRequest(BaseModel):
@@ -29,6 +32,8 @@ class UserRead(BaseModel):
     email: EmailStr
     membership: str
     location: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

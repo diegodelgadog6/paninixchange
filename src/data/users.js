@@ -55,6 +55,8 @@ export function toCurrentUser(apiUser) {
     membership: MEMBERSHIP_LABELS[apiUser.membership] ?? apiUser.membership,
     membershipCode: apiUser.membership,
     location: apiUser.location ?? '',
+    lat: apiUser.lat ?? null,
+    lng: apiUser.lng ?? null,
     memberSince: formatMemberSince(apiUser.created_at),
     avatar: (() => {
       try { const s = window.localStorage.getItem('pxc:avatar'); if (s) return s } catch {}

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { useRadarMatches } from '../context/RadarContext'
+import { updateMe } from '../lib/api'
 
 // Manages the full Trade Radar state: location search config persisted to localStorage,
 // setup modal visibility, delete confirmation, and live-filtered match list.
@@ -34,6 +36,7 @@ function loadSearch() {
 }
 
 export function useRadar() {
+  const { token, refreshUser } = useAuth()
   const { matches: allMatches, loading, refresh } = useRadarMatches()
   const [search, setSearch] = useState(loadSearch)
   const [showSetup, setShowSetup] = useState(false)
@@ -55,17 +58,31 @@ export function useRadar() {
     [allMatches, search],
   )
 
-  function confirmSearch(newSearch) {
+  async function confirmSearch(newSearch) {
     // newSearch includes { city, radius, lat, lng }
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(newSearch))
     setSearch(newSearch)
     setShowSetup(false)
+    if (token) {
+      try {
+        await updateMe(token, { location: newSearch.city, lat: newSearch.lat, lng: newSearch.lng })
+        await refreshUser()
+      } catch { /* non-blocking: localStorage already saved */ }
+      refresh()
+    }
   }
 
-  function deleteSearch() {
+  async function deleteSearch() {
     window.localStorage.removeItem(STORAGE_KEY)
     setSearch(null)
     setConfirmDelete(false)
+    if (token) {
+      try {
+        await updateMe(token, { location: null, lat: null, lng: null })
+        await refreshUser()
+      } catch { /* non-blocking */ }
+      refresh()
+    }
   }
 
   function openSetup() {
