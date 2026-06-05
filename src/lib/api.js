@@ -3,6 +3,16 @@
 // Every helper returns parsed JSON or throws an Error whose message is the
 // backend's `detail` string (already in Spanish), ready to show in the UI.
 
+//Para que los usuarios que hace la oferta y quien la recive tengan los botones correctos
+export const acceptTrade  = (token, id) =>
+  apiFetch(`/api/trades/${id}/accept`,  { method: 'PATCH', token })
+
+export const rejectTrade  = (token, id) =>
+  apiFetch(`/api/trades/${id}/reject`,  { method: 'PATCH', token })
+
+export const withdrawTrade = (token, id) =>
+  apiFetch(`/api/trades/${id}/withdraw`, { method: 'PATCH', token })
+
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 
 // Extracts a human-readable message from a FastAPI error body.

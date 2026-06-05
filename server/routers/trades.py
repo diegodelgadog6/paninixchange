@@ -150,3 +150,70 @@ async def confirm_trade(
         whatsapp=whatsapp_digits(receiver.phone),
         rating=demo_meta["rating"],
     )
+
+
+@router.patch("/{trade_id}/accept", response_model=ContactRead)
+async def accept_trade(
+    trade_id: int,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """El receiver acepta el intercambio propuesto."""
+    trade = await session.get(Trade, trade_id)
+    if trade is None:
+        raise HTTPException(status_code=404, detail="Intercambio no encontrado.")
+    if trade.receiver_id != user.id:
+        raise HTTPException(status_code=403, detail="Solo el receptor puede aceptar.")
+
+    receiver = await session.get(User, trade.receiver_id)
+    initiator = await session.get(User, trade.initiator_id)
+    demo_meta = _demo_meta(initiator) if initiator else None
+
+    trade.status = "confirmed"
+    session.add(trade)
+    await session.commit()
+
+    return ContactRead(
+        name=initiator.name,
+        phone=initiator.phone,
+        whatsapp=whatsapp_digits(initiator.phone),
+        rating=demo_meta["rating"] if demo_meta else 5.0,
+    )
+
+
+@router.patch("/{trade_id}/reject")
+async def reject_trade(
+    trade_id: int,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """El receiver rechaza el intercambio."""
+    trade = await session.get(Trade, trade_id)
+    if trade is None:
+        raise HTTPException(status_code=404, detail="Intercambio no encontrado.")
+    if trade.receiver_id != user.id:
+        raise HTTPException(status_code=403, detail="Solo el receptor puede rechazar.")
+
+    trade.status = "rejected"
+    session.add(trade)
+    await session.commit()
+    return {"ok": True}
+
+
+@router.patch("/{trade_id}/withdraw")
+async def withdraw_trade(
+    trade_id: int,
+    user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """El initiator retira su oferta."""
+    trade = await session.get(Trade, trade_id)
+    if trade is None:
+        raise HTTPException(status_code=404, detail="Intercambio no encontrado.")
+    if trade.initiator_id != user.id:
+        raise HTTPException(status_code=403, detail="Solo el proponente puede retirar.")
+
+    trade.status = "withdrawn"
+    session.add(trade)
+    await session.commit()
+    return {"ok": True}

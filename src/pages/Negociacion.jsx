@@ -91,7 +91,6 @@ function InfoCard({ icon, title, children }) {
   )
 }
 
-// Centered message panel for the non-table states (no match selected / error).
 function NegotiationNotice({ icon, title, children }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-surface-container-low px-6 text-center">
@@ -125,14 +124,16 @@ function Negociacion() {
     confirmError,
     balance,
     canConfirm,
+    isInitiator,
     removeFromYou,
     removeFromThem,
     setConfirmOpen,
     setContactOpen,
     handleConfirm,
+    handleWithdraw,
+    handleReject,
   } = useNegotiation(collectorId)
 
-  // Reached via the sidebar with no collector selected — point back to the radar.
   if (!collectorId) {
     return (
       <NegotiationNotice icon="swap_horiz" title="Ningún intercambio abierto">
@@ -201,7 +202,6 @@ function Negociacion() {
           <InfoCard icon="history" title="Historial Reciente">
             {partner.username} completó {partner.successfulTrades} intercambios con 0 incidencias.
           </InfoCard>
-          {/* Generic safety tip — not user data, shown for every trade. */}
           <InfoCard icon="edit_note" title="Notas de Trading">
             Prefiere encuentros en zonas públicas y horario diurno.
           </InfoCard>
@@ -215,25 +215,54 @@ function Negociacion() {
       <div className="fixed bottom-0 left-64 right-0 z-30 flex items-center justify-between border-t border-outline-variant/10 bg-surface/95 px-12 py-4 backdrop-blur-md">
         <div className="flex items-center gap-2 text-on-surface-variant">
           <span className="h-2 w-2 animate-pulse rounded-full bg-secondary" />
-          <span className="text-label-md">Esperando tu confirmación</span>
+          <span className="text-label-md">
+            {isInitiator ? 'Esperando respuesta del coleccionista' : 'Tienes una propuesta pendiente'}
+          </span>
         </div>
+
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="rounded-lg border border-outline-variant/40 px-6 py-3 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={() => setConfirmOpen(true)}
-            disabled={!canConfirm}
-            className="flex items-center gap-2 rounded-lg bg-secondary-container px-12 py-3 text-label-md font-bold text-on-secondary-container shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Icon name="handshake" className="!text-[20px]" />
-            Confirmar intercambio
-          </button>
+          {isInitiator ? (
+            // Quien propuso: puede retirar su oferta
+            <>
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="rounded-lg border border-outline-variant/40 px-6 py-3 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleWithdraw}
+                disabled={confirming}
+                className="flex items-center gap-2 rounded-lg border border-error/40 px-6 py-3 text-label-md text-error transition-colors hover:bg-error/10 disabled:opacity-50"
+              >
+                <Icon name="undo" className="!text-[18px]" />
+                Retirar oferta
+              </button>
+            </>
+          ) : (
+            // Quien recibe: acepta o rechaza
+            <>
+              <button
+                type="button"
+                onClick={handleReject}
+                disabled={confirming}
+                className="rounded-lg border border-outline-variant/40 px-6 py-3 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container disabled:opacity-50"
+              >
+                Rechazar
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmOpen(true)}
+                disabled={!canConfirm || confirming}
+                className="flex items-center gap-2 rounded-lg bg-secondary-container px-12 py-3 text-label-md font-bold text-on-secondary-container shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Icon name="handshake" className="!text-[20px]" />
+                Aceptar intercambio
+              </button>
+            </>
+          )}
         </div>
       </div>
 
