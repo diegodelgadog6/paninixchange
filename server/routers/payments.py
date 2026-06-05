@@ -15,7 +15,7 @@ router = APIRouter(prefix="/api/payments", tags=["payments"])
 # Map plan id → Stripe Price ID (set real IDs in env or replace here).
 PRICE_IDS: dict[str, str] = {
     "pro": "price_1Tf1SUKLWqpBKTV6vSFzO58t",
-    "leyenda": "price_1Tf1TBKLWqpBKTV6hnNT8Oui",
+    "legend": "price_1Tf1TBKLWqpBKTV6hnNT8Oui",
 }
 
 
