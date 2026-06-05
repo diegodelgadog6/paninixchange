@@ -8,10 +8,9 @@ import { createTrade } from '../lib/api'
 // `match` comes from the matching engine (GET /api/radar/matches):
 //   { collector, theyOffer[], iOffer[], goldCount, compatibility }
 // Tags are derived from live counts instead of hardcoded strings.
-// `collector.demo` marks simulated data — shown as a subtle "Prueba" chip.
 function UserMatchCard({ match }) {
   const { collector, theyOffer, iOffer, goldCount, compatibility } = match
-  const { username, name, avatar, distanceKm, demo } = collector
+  const { username, name, avatar, distanceKm } = collector
   const { token } = useAuth()
   const navigate = useNavigate()
   const [sending, setSending] = useState(false)
@@ -44,11 +43,6 @@ function UserMatchCard({ match }) {
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <h3 className="text-label-md text-on-surface">{username}</h3>
-            {demo && (
-              <span className="rounded border border-outline-variant/50 px-1.5 py-0.5 text-[9px] font-bold uppercase text-on-surface-variant">
-                Prueba
-              </span>
-            )}
           </div>
           <div className="flex items-center gap-2">
             <span className="text-label-sm text-on-surface-variant">

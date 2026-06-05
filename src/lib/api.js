@@ -131,11 +131,6 @@ export const confirmTrade = (token, tradeId) =>
 export const unconfirmTrade = (token, tradeId) =>
   apiFetch(`/api/trades/${tradeId}/unconfirm`, { method: 'PATCH', token })
 
-// PATCH /api/trades/:id/demo-confirm → TradeDetailRead. Triggers the demo receiver's
-// confirm flag (called by a client-side timer ~2–3 s after the real user confirms).
-export const demoConfirmTrade = (token, tradeId) =>
-  apiFetch(`/api/trades/${tradeId}/demo-confirm`, { method: 'PATCH', token })
-
 // ── Reviews ─────────────────────────────────────────────────────────────────
 
 export const createReview = (token, { tradeId, rating, comment }) =>

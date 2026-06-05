@@ -5,7 +5,6 @@ from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from data.collectors import DEMO_COLLECTORS
 from models.review import Review
 from models.trade import Trade, TradeItem
 from models.user import User
@@ -49,12 +48,6 @@ def build_badges(successful: int, reviews: int, rating: float) -> list[BadgeRead
     return badges
 
 
-def _partner_name(user: User) -> str:
-    """Display name for a trade partner (demo collectors carry it in their metadata)."""
-    meta = next((d for d in DEMO_COLLECTORS if d["username"] == user.username), None)
-    return meta["name"] if meta else user.username
-
-
 async def build_history(session: AsyncSession, user_id: int) -> list[TradeHistoryRead]:
     """The user's trades (as initiator), newest first, with partner, cromo count,
     status and the rating the user left for each (None until they rate it)."""
@@ -82,7 +75,7 @@ async def build_history(session: AsyncSession, user_id: int) -> list[TradeHistor
     receivers = (await session.execute(
         select(User).where(User.id.in_({t.receiver_id for t in trades}))
     )).scalars().all()
-    name_by_id = {u.id: _partner_name(u) for u in receivers}
+    name_by_id = {u.id: u.username for u in receivers}
 
     return [
         TradeHistoryRead(

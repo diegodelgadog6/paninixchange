@@ -19,8 +19,7 @@ async def get_matches(
 ):
     """Ranked trade suggestions for the authenticated user.
 
-    Crosses the user's live collection against every other collector — seeded demo
-    collectors and real registered users alike:
+    Crosses the user's live collection against every other registered collector:
       - they_offer: cards I'm missing (0 copies) that they have spare (>= 2)
       - i_offer:    cards they're missing (0 copies) that I have spare (>= 2)
     Keeps only mutually beneficial matches (both sides gain), ranked by compatibility.
@@ -31,7 +30,7 @@ async def get_matches(
 
     my_copies = await copies_for(session, user.id)
 
-    # Every other collector with an inventory (demo or real), minus the user themselves.
+    # Every other collector with an inventory, minus the user themselves.
     owner_ids = {
         uc.user_id
         for uc in (await session.execute(select(UserCard))).scalars().all()

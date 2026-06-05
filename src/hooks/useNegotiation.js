@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import {
   acceptSuggestion,
   addTradeItem,
   confirmTrade,
-  demoConfirmTrade,
   fetchTrade,
   fetchTradeCatalog,
   rejectSuggestion,
@@ -14,7 +13,6 @@ import {
 } from '../lib/api'
 
 const POLL_MS = 3500  // live polling interval while on the table
-const DEMO_CONFIRM_DELAY = 2500  // ms after user confirms before demo seals the trade
 
 // Drives the live negotiation table for one trade (identified by tradeId).
 // Hydrates from GET /api/trades/:id and keeps the table state in sync via polling.
@@ -27,7 +25,6 @@ export function useNegotiation(tradeId) {
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState(null)
-  const demoConfirming = useRef(false)
 
   const loadTrade = useCallback(async () => {
     if (!token || !tradeId) return
@@ -56,27 +53,6 @@ export function useNegotiation(tradeId) {
     window.addEventListener('focus', loadTrade)
     return () => window.removeEventListener('focus', loadTrade)
   }, [loadTrade])
-
-  // Demo auto-confirm: ~2.5 s after the user confirms, fire demo-confirm so the trade
-  // seals and feels like a real two-party close.
-  useEffect(() => {
-    if (!trade) return
-    if (trade.status !== 'negotiating') return
-    if (!trade.i_confirmed) return
-    const partnerIsDemo = trade.partner?.demo
-    if (!partnerIsDemo) return
-    if (demoConfirming.current) return
-    demoConfirming.current = true
-    const timer = setTimeout(async () => {
-      try {
-        const updated = await demoConfirmTrade(token, tradeId)
-        setTrade(updated)
-      } catch {
-        // ignore — the next poll will pick up any state change
-      }
-    }, DEMO_CONFIRM_DELAY)
-    return () => clearTimeout(timer)
-  }, [trade, token, tradeId])
 
   const loadCatalog = useCallback(async () => {
     if (!token || !tradeId) return
