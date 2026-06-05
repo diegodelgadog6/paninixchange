@@ -17,7 +17,7 @@ export const currentUser = {
 }
 
 // Backend membership codes → user-facing labels (UI shows the label, not the code).
-const MEMBERSHIP_LABELS = { free: 'Free Member', pro: 'Pro Member', legend: 'Legend' }
+const MEMBERSHIP_LABELS = { free: 'Free Member', pro: 'Pro Member', legend: 'Leyenda', leyenda: 'Leyenda' }
 
 const MONTHS_ES = [
   'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
