@@ -75,3 +75,15 @@ async def stripe_webhook(
                 await session.commit()
 
     return {"received": True}
+
+
+@router.post("/cancel-subscription", status_code=status.HTTP_200_OK)
+async def cancel_subscription(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """Downgrade the authenticated user's membership to free."""
+    current_user.membership = "free"
+    session.add(current_user)
+    await session.commit()
+    return {"membership": "free"}

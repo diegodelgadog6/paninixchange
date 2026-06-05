@@ -53,6 +53,7 @@ export function toCurrentUser(apiUser) {
     name,
     email: apiUser.email,
     membership: MEMBERSHIP_LABELS[apiUser.membership] ?? apiUser.membership,
+    membershipCode: apiUser.membership,
     location: apiUser.location ?? '',
     memberSince: formatMemberSince(apiUser.created_at),
     avatar: (() => {

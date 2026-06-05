@@ -82,11 +82,11 @@ function Sidebar() {
       {/* Footer actions */}
       <div className="px-4 py-4 space-y-1 border-t border-white/10">
         <Link
-          to="/radar"
-          className="mb-2 flex items-center justify-center gap-2 rounded-lg bg-secondary-container px-3 py-2.5 text-label-md font-semibold text-primary hover:bg-secondary-fixed-dim transition-colors"
+          to="/perfil?config=1"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-label-md text-primary-fixed-dim hover:bg-white/5 hover:text-white transition-colors"
         >
-          <Icon name="add" className="!text-[20px]" />
-          Start New Swap
+          <Icon name="settings" className="!text-[20px]" />
+          Configuración
         </Link>
         <button
           type="button"
