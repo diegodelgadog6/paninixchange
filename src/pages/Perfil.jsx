@@ -123,12 +123,9 @@ function Perfil() {
           <div className="flex flex-col gap-2">
             <button
               type="button"
-              className="rounded-lg bg-primary-container px-6 py-2.5 text-label-md text-white transition-opacity hover:opacity-90"
-            >
-              Contactar Coleccionista
-            </button>
-            <button
-              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(user?.username ?? user?.email ?? '')
+              }}
               className="rounded-lg border border-outline-variant/40 px-6 py-2.5 text-label-md text-on-surface-variant transition-colors hover:bg-surface-container"
             >
               Compartir Perfil
