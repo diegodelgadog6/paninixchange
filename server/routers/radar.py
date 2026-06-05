@@ -72,8 +72,7 @@ async def get_match(
     """The single trade suggestion between the authenticated user and one collector.
 
     Powers the negotiation table (the proposed swap is the same one the radar shows).
-    Works for any collector — demo or real; a 404 is returned when no mutually
-    beneficial trade exists between the two.
+    A 404 is returned when no mutually beneficial trade exists between the two.
     """
     collector = await session.get(User, collector_id)
     if collector is None or collector.id == user.id:
