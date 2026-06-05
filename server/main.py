@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import config
 from database import init_db, seed_cards, seed_demo_collectors
 from routers import auth, users, cards, trades, radar, reviews
 
@@ -15,10 +16,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="PaniniXchange API", lifespan=lifespan)
 
-# Allow the Vite dev server to call the API during development.
+# Allowed frontend origins come from config (Vite dev server by default; the deployed
+# frontend URL in production via the ALLOWED_ORIGINS env var).
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=config.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

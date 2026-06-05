@@ -4,7 +4,7 @@ from sqlmodel import SQLModel, select
 import config
 
 
-engine = create_async_engine(config.DATABASE_URL, echo=True)
+engine = create_async_engine(config.DATABASE_URL, echo=config.SQL_ECHO)
 
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
