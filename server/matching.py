@@ -3,6 +3,7 @@
 Holds the match computation (ported from the original client engine in
 src/data/matches.js) and `collector_meta`, the single place that resolves the display
 metadata for a trade partner."""
+import math
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -24,12 +25,23 @@ async def copies_for(session: AsyncSession, user_id: int) -> dict[int, int]:
     }
 
 
-async def collector_meta(session: AsyncSession, user: User) -> dict:
+def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Great-circle distance in km between two (lat, lon) pairs."""
+    R = 6371.0
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlam = math.radians(lon2 - lon1)
+    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlam / 2) ** 2
+    return round(R * 2 * math.asin(math.sqrt(a)), 1)
+
+
+async def collector_meta(session: AsyncSession, user: User, me: User) -> dict:
     """Display metadata for a trade partner — `name`, `distance_km`, `rating`,
     `successful_trades`.
 
     Rating and completed-trade count are derived from real activity (same aggregation as
-    build_reputation). Distance is None until geolocation lands (a later milestone)."""
+    build_reputation). Distance is computed via Haversine when both users have stored
+    coordinates; None otherwise."""
     received = (await session.execute(
         select(Review.rating).where(Review.ratee_id == user.id)
     )).scalars().all()
@@ -42,9 +54,16 @@ async def collector_meta(session: AsyncSession, user: User) -> dict:
         )
     )).scalar_one()
 
+    distance_km = None
+    if (
+        me.lat is not None and me.lng is not None
+        and user.lat is not None and user.lng is not None
+    ):
+        distance_km = _haversine_km(me.lat, me.lng, user.lat, user.lng)
+
     return {
         "name": user.username,
-        "distance_km": None,
+        "distance_km": distance_km,
         "rating": rating,
         "successful_trades": successful,
     }

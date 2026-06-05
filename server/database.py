@@ -1,3 +1,4 @@
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel, select
@@ -12,6 +13,22 @@ async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False
 async def get_session():
     async with async_session() as session:
         yield session
+
+
+async def migrate_db():
+    """Add new nullable columns to existing tables without dropping data.
+
+    create_all creates missing tables but never alters existing ones, so columns added
+    after the initial deploy must be applied here. Each column runs in its own transaction
+    so that an already-exists error (SQLite: OperationalError; Postgres: ProgrammingError)
+    only rolls back that one statement and doesn't poison the connection for the next one.
+    """
+    for col, col_type in [("lat", "FLOAT"), ("lng", "FLOAT")]:
+        try:
+            async with engine.begin() as conn:
+                await conn.execute(text(f"ALTER TABLE user ADD COLUMN {col} {col_type}"))
+        except Exception:
+            pass  # column already exists
 
 
 async def init_db():
