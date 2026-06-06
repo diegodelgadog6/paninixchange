@@ -42,10 +42,10 @@ def _whatsapp_digits(phone: str) -> str:
     return "".join(ch for ch in phone if ch.isdigit())
 
 
-async def _contact_for(session: AsyncSession, partner: User) -> ContactRead:
+async def _contact_for(session: AsyncSession, partner: User, me: User) -> ContactRead:
     """Contact revealed ONLY when a trade is completed — privacy by design.
     A real user may not have a phone on file yet (then whatsapp is empty)."""
-    meta = await collector_meta(session, partner)
+    meta = await collector_meta(session, partner, me)
     phone = partner.phone or ""
     return ContactRead(
         name=meta["name"],
@@ -75,7 +75,7 @@ async def _build_detail(
     """Full negotiation-table payload from the caller's perspective."""
     is_initiator = trade.initiator_id == user.id
     partner = await _partner_of(trade, user, session)
-    meta = await collector_meta(session, partner)
+    meta = await collector_meta(session, partner, user)
 
     items = (await session.execute(
         select(TradeItem, Card)
@@ -103,7 +103,7 @@ async def _build_detail(
 
     contact = None
     if trade.status == "completed":
-        contact = await _contact_for(session, partner)
+        contact = await _contact_for(session, partner, user)
 
     i_confirmed = trade.initiator_confirmed if is_initiator else trade.receiver_confirmed
     they_confirmed = trade.receiver_confirmed if is_initiator else trade.initiator_confirmed
@@ -199,7 +199,7 @@ async def list_match_trades(
             await session.execute(select(User).where(User.id.in_(partner_ids)))
         ).scalars().all()
     }
-    meta_by_id = {pid: await collector_meta(session, partners[pid]) for pid in partner_ids}
+    meta_by_id = {pid: await collector_meta(session, partners[pid], user) for pid in partner_ids}
 
     result: list[MatchTradeRead] = []
     for t in trades:
@@ -213,7 +213,7 @@ async def list_match_trades(
 
         contact = None
         if t.status == "completed" and partner is not None:
-            contact = await _contact_for(session, partner)
+            contact = await _contact_for(session, partner, user)
 
         i_confirmed = t.initiator_confirmed if is_initiator else t.receiver_confirmed
         they_confirmed = t.receiver_confirmed if is_initiator else t.initiator_confirmed
