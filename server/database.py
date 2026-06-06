@@ -26,7 +26,7 @@ async def migrate_db():
     for col, col_type in [("lat", "FLOAT"), ("lng", "FLOAT")]:
         try:
             async with engine.begin() as conn:
-                await conn.execute(text(f"ALTER TABLE user ADD COLUMN {col} {col_type}"))
+                await conn.execute(text(f'ALTER TABLE "user" ADD COLUMN {col} {col_type}'))
         except Exception:
             pass  # column already exists
 
