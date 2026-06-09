@@ -69,7 +69,7 @@ function Perfil() {
 
   // The most recent confirmed trade is the one "Calificar reciente" rates.
   const recentTrade = useMemo(
-    () => profile?.tradeHistory.find((t) => t.status === 'confirmed') ?? null,
+    () => profile?.tradeHistory.find((t) => t.status === 'completed') ?? null,
     [profile],
   )
 
