@@ -91,8 +91,7 @@ La documentación del proyecto está en la carpeta
 - [02-Arquitectura.docx](ENTREGABLES%20DEL%20PROYECTO/02-Arquitectura.docx) — arquitectura de la solución.
 - [03-Modelo-de-Datos.docx](ENTREGABLES%20DEL%20PROYECTO/03-Modelo-de-Datos.docx) — modelo relacional y diccionario de datos.
 - [DEPLOY.md](ENTREGABLES%20DEL%20PROYECTO/DEPLOY.md) — guía de despliegue.
-
-> El video de demostración (YouTube, máx. 8 min) se entrega por separado.
+-[LINK AL VIDEO YOUTUBE] — https://youtu.be/enWFZtDYZSg
 
 ---
 
