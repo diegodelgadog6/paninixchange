@@ -10,7 +10,7 @@ autenticación real, API REST, base de datos y emparejamiento automático de int
 
 | Servicio | URL |
 | --- | --- |
-| **Frontend (Vercel)** | https://paninixchange.vercel.app |
+| **Frontend (Vercel)** | https://paninixchange.diegodelgadogontes.com |
 | **Backend (Railway)** | https://paninixchange-production.up.railway.app |
 
 ## Tech stack
@@ -91,7 +91,7 @@ La documentación del proyecto está en la carpeta
 - [02-Arquitectura.docx](ENTREGABLES%20DEL%20PROYECTO/02-Arquitectura.docx) — arquitectura de la solución.
 - [03-Modelo-de-Datos.docx](ENTREGABLES%20DEL%20PROYECTO/03-Modelo-de-Datos.docx) — modelo relacional y diccionario de datos.
 - [DEPLOY.md](ENTREGABLES%20DEL%20PROYECTO/DEPLOY.md) — guía de despliegue.
--[LINK AL VIDEO YOUTUBE] — https://youtu.be/enWFZtDYZSg
+- [Video de presentación en YouTube](https://youtu.be/enWFZtDYZSg)
 
 ---
 
